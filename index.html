@@ -5,50 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ระบบติดตามงบประมาณ - โรงเรียนประจักษ์ศิลปาคม</title>
     
-    <!-- 1. Load Tailwind CSS -->
+    <!-- 1. Styles & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Load Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- 3. Load React & ReactDOM -->
+    <!-- 2. React Core (UMD) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- 4. Load Babel (to compile JSX in browser) -->
+    <!-- 3. Libraries (Recharts & Lucide) -->
+    <script src="https://unpkg.com/recharts@2.10.0/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- 4. Babel (To compile JSX in browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 5. Load Recharts (Charts Library) -->
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
-
     <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #F7F9FC;
+        body { font-family: 'Sarabun', sans-serif; background-color: #F7F9FC; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c0a5f5; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6A4DE8; }
+        
+        /* Animations */
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+        
+        @keyframes scale-up { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-scale-up { animation: scale-up 0.3s ease-out forwards; }
+        
+        @keyframes blob { 
+            0% { transform: translate(0px, 0px) scale(1); } 
+            33% { transform: translate(30px, -50px) scale(1.1); } 
+            66% { transform: translate(-20px, 20px) scale(0.9); } 
+            100% { transform: translate(0px, 0px) scale(1); } 
         }
-        /* Custom Animations */
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.5s ease-out forwards;
-        }
-        @keyframes scale-up {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .animate-scale-up {
-            animation: scale-up 0.3s ease-out forwards;
-        }
+        .animate-blob { animation: blob 7s infinite; }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "recharts": "https://aistudiocdn.com/recharts@^3.4.1"
   }
 }
@@ -57,60 +58,55 @@
 <body>
     <div id="root"></div>
 
-    <!-- THE APP LOGIC -->
     <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { 
-            BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-            PieChart, Pie, Cell, Legend 
-        } = Recharts;
+        // ==========================================
+        // 1. INITIALIZATION & HELPERS
+        // ==========================================
+        const { useState, useEffect, useRef } = React;
+        const { createRoot } = ReactDOM;
+        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } = window.Recharts;
 
-        // --- 1. ICONS (SVG Components) ---
-        const Icons = {
-            LayoutDashboard: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
-            PlusCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>,
-            PieChart: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
-            FolderOpen: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>,
-            FileText: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
-            Clock: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-            Bell: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
-            LogOut: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
-            Wallet: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5Zm-10 0h.01M11 12h.01"/></svg>,
-            TrendingUp: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
-            AlertCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
-            FilePlus2: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M3 15h6"/><path d="M6 12v6"/></svg>,
-            FolderCog: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10.5 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v3.3"/><circle cx="18" cy="18" r="3"/><path d="m18 14 .1.3"/><path d="m15.1 15.1.3.1"/><path d="m14 18 .3.1"/><path d="m15.1 20.9.3-.1"/><path d="m18 22 .1-.3"/><path d="m20.9 20.9-.1-.3"/><path d="m22 18-.3-.1"/><path d="m20.9 15.1-.1-.3"/></svg>,
-            Lock: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-            User: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-            LogIn: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
-            CheckCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-            XCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>,
-            Search: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
-            Filter: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
-            AlertTriangle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
-            Plus: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-            Edit: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
-            Trash2: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
-            MoreVertical: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
-            X: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>,
-            Calendar: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
-            Download: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
-            Printer: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>,
-            Save: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-            Shield: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        // Icon Helper Component
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (window.lucide && window.lucide.icons && window.lucide.icons[name]) {
+                    const svgString = window.lucide.icons[name].toSvg({ 
+                        width: size, 
+                        height: size, 
+                        class: className 
+                    });
+                    if (iconRef.current) {
+                        iconRef.current.innerHTML = svgString;
+                    }
+                }
+            }, [name, size, className]);
+            return <span ref={iconRef} className={`inline-flex items-center justify-center ${className}`}></span>;
         };
 
-        // --- 2. DATA & CONSTANTS ---
+        // ==========================================
+        // 2. CONSTANTS & DATA
+        // ==========================================
         const THEME_GRADIENT = "bg-gradient-to-r from-[#6A4DE8] to-[#D76EF5]";
         const LOGO_URL = "https://img2.pic.in.th/pic/23847230_1753798167972527_6171827179803949950_o.md.png";
         
+        // Enums replacement
+        const Page = {
+            HOME: 'HOME',
+            RECORD: 'RECORD',
+            DASHBOARD: 'DASHBOARD',
+            PROJECTS: 'PROJECTS',
+            REPORT: 'REPORT',
+            ACCESS_LOGS: 'ACCESS_LOGS'
+        };
+
         const MOCK_ACCESS_LOGS = [
             { id: 1, timestamp: '2025-10-01 08:30:00', username: 'admin', role: 'admin', status: 'Success' },
             { id: 2, timestamp: '2025-10-01 09:15:00', username: 'ชัชตะวัน', role: 'user', status: 'Success' },
             { id: 3, timestamp: '2025-10-02 10:00:00', username: 'ภราดร', role: 'user', status: 'Success' },
         ];
 
-        const MOCK_PROJECTS_DATA = [
+        const MOCK_PROJECTS = [
             { id: 101, name: "[PJ1-1] จัดซื้อวัสดุการจัดการเรียนการสอนทุกกลุ่มสาระ", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 50356, spent: 0, category: "งบอุดหนุน", status: "Active" },
             { id: 102, name: "[PJ1-2] โครงการค่าใช้จ่ายสาธารณูปโภค (ค่าไฟฟ้า ค่าอินเทอร์เน็ต)", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 283500, spent: 0, category: "งบดำเนินงาน", status: "Active" },
             { id: 103, name: "[PJ1-3] โครงการจัดซื้อวัสดุ อุปกรณ์ เพื่อเพิ่มประสิทธิภาพการทำงานและสนับสนุนงาน", group: "กลุ่มบริหารงบประมาณ", owner: "ไม่ระบุ", budget: 22000, spent: 0, category: "งบลงทุน", status: "Active" },
@@ -176,7 +172,7 @@
             { id: 216, name: "[PJ2-16] โครงการพัฒนาการอ่านออกเขียนได้", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 1000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
             { id: 301, name: "[PJ3-1] หักงบกลาง 10%", group: "กลุ่มบริหารงบประมาณ", owner: "ไม่ระบุ", budget: 72356, spent: 0, category: "งบกลาง", status: "Active" }
         ];
-
+        
         const CHART_DATA_MONTHLY = [
             { name: 'ต.ค. 68', spending: 0 }, { name: 'พ.ย. 68', spending: 0 }, { name: 'ธ.ค. 68', spending: 0 },
             { name: 'ม.ค. 69', spending: 0 }, { name: 'ก.พ. 69', spending: 0 }, { name: 'มี.ค. 69', spending: 0 },
@@ -184,7 +180,11 @@
             { name: 'ก.ค. 69', spending: 0 }, { name: 'ส.ค. 69', spending: 0 }, { name: 'ก.ย. 69', spending: 0 },
         ];
 
-        // --- 3. UI COMPONENTS ---
+        const CATEGORY_COLORS = ['#6A4DE8', '#D76EF5', '#FDBA74'];
+
+        // ==========================================
+        // 3. UI COMPONENTS
+        // ==========================================
         
         const Card = ({ children, className = "", title, action }) => (
             <div className={`bg-white rounded-3xl shadow-lg p-6 ${className} transition-all duration-300 hover:shadow-xl`}>
@@ -202,14 +202,14 @@
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-
-            const AUTHORIZED_USERS = ["ชัชตะวัน", "ภราดร", "ภาคภูมิ", "ทิวาวรรณ", "วัชรี", "บุญญาภรณ์", "อัญชนีย์", "วลัยรัตน์", "บุญจันทร์", "ยุทธไกร", "กันต์ฤทัย", "เสาวภา", "อภิชาติ", "สุภาภรณ์", "วิษณุ", "จักรพงษ์", "บุญเสริม", "อุดมวิทย์", "พงษ์เพชร", "ชลฎา", "ปภัสพ์มณ", "ตรีนัทธ์ธนา", "วชิรวิทย์", "ศิรินภา"];
-
+            
             const handleLogin = (e) => {
                 e.preventDefault();
                 setError('');
                 const cleanUsername = username.trim();
                 const cleanPassword = password.trim();
+
+                const AUTHORIZED_USERS = ["ชัชตะวัน", "ภราดร", "ภาคภูมิ", "ทิวาวรรณ", "วัชรี", "บุญญาภรณ์", "อัญชนีย์", "วลัยรัตน์", "บุญจันทร์", "ยุทธไกร", "กันต์ฤทัย", "เสาวภา", "อภิชาติ", "สุภาภรณ์", "วิษณุ", "จักรพงษ์", "บุญเสริม", "อุดมวิทย์", "พงษ์เพชร", "ชลฎา", "ปภัสพ์มณ", "ตรีนัทธ์ธนา", "วชิรวิทย์", "ศิรินภา"];
 
                 if (cleanUsername === 'admin' && cleanPassword === 'admin4444') {
                     onRecordLog(cleanUsername, 'admin', 'Success');
@@ -238,7 +238,7 @@
                         </div>
                         <div className="p-8">
                             <form onSubmit={handleLogin} className="space-y-6">
-                                {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl flex items-center"><Icons.AlertTriangle size={16} className="mr-2" />{error}</div>}
+                                {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl flex items-center"><Icon name="AlertTriangle" size={16} className="mr-2" />{error}</div>}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1 ml-1">ชื่อผู้ใช้</label>
                                     <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="ระบุชื่อผู้ใช้" required />
@@ -248,11 +248,11 @@
                                     <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="ระบุรหัสผ่าน" required />
                                 </div>
                                 <button type="submit" className={`w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white ${THEME_GRADIENT} hover:opacity-90`}>
-                                    <Icons.LogIn size={18} /> เข้าสู่ระบบ
+                                    <Icon name="LogIn" size={18} /> เข้าสู่ระบบ
                                 </button>
                             </form>
                              <div className="mt-8 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><Icons.AlertCircle size={16} className="text-purple-500" /> คำแนะนำสำหรับผู้ใช้</h4>
+                                <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><Icon name="AlertCircle" size={16} className="text-purple-500" /> คำแนะนำสำหรับผู้ใช้</h4>
                                 <ul className="text-xs text-gray-500 space-y-1 ml-1">
                                     <li>• <strong>ชื่อผู้ใช้:</strong> ใช้ชื่อจริงภาษาไทย (เช่น ชัชตะวัน)</li>
                                     <li>• <strong>รหัสผ่าน:</strong> PJ123</li>
@@ -260,6 +260,147 @@
                              </div>
                         </div>
                      </div>
+                </div>
+            );
+        };
+
+        const RecordExpense = ({ projects }) => {
+            const [submitted, setSubmitted] = useState(false);
+            const [formData, setFormData] = useState({ projectId: '', item: '', date: new Date().toISOString().split('T')[0], amount: '', note: '' });
+            const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setTimeout(() => { setSubmitted(true); setTimeout(() => setSubmitted(false), 3000); setFormData({ projectId: '', item: '', date: new Date().toISOString().split('T')[0], amount: '', note: '' }); }, 800);
+            };
+            return (
+                <div className="max-w-2xl mx-auto animate-fade-in">
+                    <div className="flex items-center mb-6"><div className={`p-2 rounded-lg ${THEME_GRADIENT} text-white mr-3`}><Icon name="Save" size={24} /></div><h2 className="text-2xl font-bold text-gray-800">บันทึกรายการใช้จ่าย</h2></div>
+                    <Card>
+                        {submitted && <div className="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-center"><Icon name="CheckCircle" className="mr-2 h-5 w-5 text-green-600" />บันทึกข้อมูลสำเร็จ!</div>}
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div><label className="block text-sm font-medium text-gray-700 mb-1">เลือกโครงการ</label><select name="projectId" value={formData.projectId} onChange={handleChange} required className="block w-full pl-4 pr-10 py-3 text-base border border-gray-300 rounded-xl outline-none"><option value="">-- กรุณาเลือกโครงการ --</option>{projects.filter(p => p.status !== 'Closed').map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}</select></div>
+                            <div><label className="block text-sm font-medium text-gray-700 mb-1">รายการใช้จ่าย</label><input type="text" name="item" value={formData.item} onChange={handleChange} required placeholder="เช่น ค่าวัสดุสำนักงาน" className="block w-full px-4 py-3 border border-gray-300 rounded-xl outline-none" /></div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">วันที่</label><input type="date" name="date" value={formData.date} onChange={handleChange} required className="block w-full px-4 py-3 border border-gray-300 rounded-xl outline-none" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน (บาท)</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required placeholder="0.00" className="block w-full px-4 py-3 border border-gray-300 rounded-xl outline-none" /></div>
+                            </div>
+                            <div><label className="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label><textarea name="note" value={formData.note} onChange={handleChange} rows={3} className="block w-full px-4 py-3 border border-gray-300 rounded-xl outline-none" /></div>
+                            <button type="submit" className={`w-full py-3 rounded-2xl text-white font-bold ${THEME_GRADIENT} shadow-md hover:opacity-90`}>บันทึกข้อมูล</button>
+                        </form>
+                    </Card>
+                </div>
+            );
+        };
+
+        const ProjectManager = ({ projects, onUpdate, onAdd, onDelete }) => {
+            const [showModal, setShowModal] = useState(false);
+            const [editingProject, setEditingProject] = useState(null);
+            const [formData, setFormData] = useState({ name: '', group: 'กลุ่มบริหารวิชาการ', owner: '', budget: 0, category: 'งบดำเนินงาน', status: 'Active', spent: 0 });
+
+            useEffect(() => {
+                if (editingProject) setFormData(editingProject);
+                else setFormData({ name: '', group: 'กลุ่มบริหารวิชาการ', owner: '', budget: 0, category: 'งบดำเนินงาน', status: 'Active', spent: 0 });
+            }, [editingProject, showModal]);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (editingProject) onUpdate({ ...editingProject, ...formData });
+                else onAdd({ ...formData, id: Math.max(...projects.map(p => p.id)) + 1 });
+                setShowModal(false);
+            };
+
+            const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.name === 'budget' ? Number(e.target.value) : e.target.value }));
+
+            return (
+                <div className="animate-fade-in relative">
+                    <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-gray-800">จัดการโครงการ</h2><button onClick={() => {setEditingProject(null); setShowModal(true);}} className={`${THEME_GRADIENT} text-white px-4 py-2 rounded-xl shadow-md flex items-center gap-2`}><Icon name="Plus" size={20} /> เพิ่มโครงการใหม่</button></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {projects.map(project => (
+                            <div key={project.id} className="bg-white rounded-3xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-100 relative">
+                                <div className="absolute top-6 right-6 text-gray-400"><Icon name="MoreVertical" size={20} /></div>
+                                <div className="mb-4"><span className={`text-xs font-bold px-2 py-1 rounded-lg ${project.category.includes('ลงทุน') ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{project.category}</span></div>
+                                <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-2 h-14">{project.name}</h3>
+                                <p className="text-sm text-gray-500 mb-4">{project.group}</p>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-sm"><span className="text-gray-500">งบประมาณ:</span><span className="font-bold text-gray-800">{project.budget.toLocaleString()} บ.</span></div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2"><div className={`h-2 rounded-full ${THEME_GRADIENT}`} style={{ width: `${project.budget > 0 ? (project.spent / project.budget) * 100 : 0}%` }}></div></div>
+                                </div>
+                                <div className="mt-6 flex gap-2 border-t pt-4">
+                                    <button onClick={() => {setEditingProject(project); setShowModal(true);}} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 border border-gray-200"><Icon name="Edit" size={16} /> แก้ไข</button>
+                                    <button onClick={() => {if(window.confirm('ยืนยันการลบ?')) onDelete(project.id);}} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 border border-red-100"><Icon name="Trash2" size={16} /> ลบ</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {showModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 relative animate-scale-up overflow-y-auto max-h-[90vh]">
+                                <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-gray-400"><Icon name="X" size={24} /></button>
+                                <h3 className="text-2xl font-bold text-gray-800 mb-6">{editingProject ? 'แก้ไขโครงการ' : 'เพิ่มโครงการใหม่'}</h3>
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div><label className="text-sm font-medium">ชื่อโครงการ</label><input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full border p-2 rounded-xl" /></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-sm font-medium">งบประมาณ</label><input type="number" name="budget" value={formData.budget} onChange={handleChange} required className="w-full border p-2 rounded-xl" /></div>
+                                        <div><label className="text-sm font-medium">กลุ่มงาน</label><select name="group" value={formData.group} onChange={handleChange} className="w-full border p-2 rounded-xl"><option value="กลุ่มบริหารวิชาการ">วิชาการ</option><option value="กลุ่มบริหารงบประมาณ">งบประมาณ</option><option value="กลุ่มบริหารงานบุคคล">บุคคล</option><option value="กลุ่มบริหารทั่วไป">ทั่วไป</option><option value="กลุ่มกิจการนักเรียน">กิจการ นร.</option></select></div>
+                                    </div>
+                                    <button type="submit" className={`w-full py-3 rounded-2xl text-white font-bold ${THEME_GRADIENT}`}>{editingProject ? 'บันทึกแก้ไข' : 'สร้างโครงการ'}</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const ReportExport = ({ projects }) => {
+            const [selectedProject, setSelectedProject] = useState('all');
+            const [isGenerating, setIsGenerating] = useState(false);
+            const handleGenerate = () => { setIsGenerating(true); setTimeout(() => setIsGenerating(false), 1500); };
+            const reportData = selectedProject === 'all' ? projects.filter(p => p.spent > 0) : projects.filter(p => p.id === Number(selectedProject));
+            const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
+            const totalSpent = projects.reduce((sum, p) => sum + p.spent, 0);
+
+            return (
+                <div className="max-w-5xl mx-auto animate-fade-in">
+                   <h2 className="text-2xl font-bold text-gray-800 mb-6">ออกรายงานสรุป</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                        <div className="md:col-span-4 space-y-6">
+                            <Card>
+                                <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><Icon name="Calendar" size={18} className="text-purple-500" /> ตัวเลือกรายงาน</h3>
+                                <select className="w-full p-2 border rounded-lg mb-2"><option>สรุปการเบิกจ่ายงบประมาณ</option></select>
+                                <select className="w-full p-2 border rounded-lg mb-2" value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}><option value="all">-- โครงการที่มีการเบิกจ่าย --</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+                                <button onClick={handleGenerate} className={`w-full py-2 rounded-xl text-white font-bold ${THEME_GRADIENT}`}>{isGenerating ? 'Generating...' : 'ดูตัวอย่าง'}</button>
+                            </Card>
+                            <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100 text-center"><Icon name="FileText" size={40} className="mx-auto text-purple-400 mb-2" /><button className="w-full py-2 bg-white border border-purple-200 text-purple-600 rounded-lg font-bold"><Icon name="Download" size={16} className="inline mr-2"/>Download PDF</button></div>
+                        </div>
+                        <div className="md:col-span-8">
+                            <Card className="min-h-[600px] flex flex-col relative bg-gray-500/5">
+                                <div className="flex-grow border border-gray-200 p-8 bg-white shadow-lg mx-auto w-full max-w-[210mm] text-black">
+                                    <div className="text-center mb-6 border-b-2 border-gray-800 pb-4"><h1 className="text-xl font-bold">รายงานสรุปการเบิกจ่ายงบประมาณ</h1><h2 className="text-lg">โรงเรียนประจักษ์ศิลปาคม</h2></div>
+                                    {isGenerating ? <div className="text-center p-10">กำลังประมวลผล...</div> : (
+                                        <div className="space-y-6">
+                                            <div className="flex justify-between text-sm"><p><strong>ผู้พิมพ์:</strong> นางสาวปภัสพ์มณ ทองอาสา</p><p>วันที่: {new Date().toLocaleDateString('th-TH')}</p></div>
+                                            <div className="bg-gray-50 p-4 rounded mb-4 grid grid-cols-3 text-center"><div><p className="text-xs text-gray-500">งบทั้งหมด</p><p className="font-bold">{totalBudget.toLocaleString()}</p></div><div><p className="text-xs text-gray-500">ใช้ไป</p><p className="font-bold text-purple-600">{totalSpent.toLocaleString()}</p></div><div><p className="text-xs text-gray-500">คงเหลือ</p><p className="font-bold text-green-600">{(totalBudget - totalSpent).toLocaleString()}</p></div></div>
+                                            <table className="w-full text-sm border-collapse"><thead><tr className="bg-gray-100"><th className="text-left p-2">โครงการ</th><th className="text-right p-2">งบอนุมัติ</th><th className="text-right p-2">เบิกจ่าย</th><th className="text-right p-2">คงเหลือ</th></tr></thead><tbody>{reportData.length > 0 ? reportData.map((p, i) => (<tr key={i} className="border-b"><td className="p-2">{p.name}</td><td className="text-right p-2">{p.budget.toLocaleString()}</td><td className="text-right p-2">{p.spent.toLocaleString()}</td><td className="text-right p-2">{(p.budget - p.spent).toLocaleString()}</td></tr>)) : <tr><td colSpan={4} className="text-center p-4">ไม่มีรายการ</td></tr>}</tbody></table>
+                                            <div className="mt-16 flex justify-between text-center px-4"><div className="w-5/12"><div className="border-b border-dotted border-gray-400 mb-2 h-8"></div><p className="text-sm">หัวหน้างานนโยบายและแผน</p></div><div className="w-5/12"><div className="border-b border-dotted border-gray-400 mb-2 h-8"></div><p className="text-sm">ผู้อำนวยการโรงเรียน</p></div></div>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AccessLogs = ({ logs }) => {
+            const sortedLogs = [...logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><Icon name="Clock" className="text-purple-600" /> ประวัติการเข้าใช้งานระบบ</h2>
+                    <Card className="overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200"><thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">เวลา</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">ผู้ใช้งาน</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">สถานะ</th></tr></thead><tbody className="bg-white divide-y divide-gray-200">{sortedLogs.map(log => (<tr key={log.id}><td className="px-6 py-4 text-sm text-gray-500">{new Date(log.timestamp).toLocaleString('th-TH')}</td><td className="px-6 py-4 text-sm font-medium">{log.username} ({log.role})</td><td className="px-6 py-4 text-center">{log.status === 'Success' ? <span className="text-green-600 text-sm"><Icon name="CheckCircle" size={16} className="inline"/> สำเร็จ</span> : <span className="text-red-600 text-sm">ล้มเหลว</span>}</td></tr>))}</tbody></table>
+                    </Card>
                 </div>
             );
         };
@@ -282,8 +423,7 @@
             }, []);
             const order = ['งบอุดหนุนรายหัว (PJ1)', 'งบพัฒนาผู้เรียน (PJ2)', 'งบกลาง (PJ3)'];
             pieChartData.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
-            const CATEGORY_COLORS = ['#6A4DE8', '#D76EF5', '#FDBA74'];
-
+            
             return (
                 <div className="space-y-8 animate-fade-in">
                     <div className="flex flex-col md:flex-row justify-between items-center mb-6">
@@ -292,23 +432,23 @@
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-[#6A4DE8]">
-                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">งบประมาณได้รับจัดสรร</p><h3 className="text-2xl lg:text-3xl font-bold text-gray-800 mt-2">{formatThaiCurrency(totalBudget)}</h3></div><div className="p-3 bg-purple-100 rounded-2xl"><Icons.Wallet className="w-8 h-8 text-[#6A4DE8]" /></div></div>
+                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">งบประมาณได้รับจัดสรร</p><h3 className="text-2xl lg:text-3xl font-bold text-gray-800 mt-2">{formatThaiCurrency(totalBudget)}</h3></div><div className="p-3 bg-purple-100 rounded-2xl"><Icon name="Wallet" className="w-8 h-8 text-[#6A4DE8]" /></div></div>
                         </Card>
                         <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-[#D76EF5]">
-                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">เบิกจ่ายไปแล้ว</p><h3 className="text-2xl lg:text-3xl font-bold text-[#D76EF5] mt-2">{formatThaiCurrency(totalSpent)}</h3><p className="text-xs text-gray-400 mt-1">คิดเป็น {percentage.toFixed(1)}%</p></div><div className="p-3 bg-pink-100 rounded-2xl"><Icons.TrendingUp className="w-8 h-8 text-[#D76EF5]" /></div></div>
+                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">เบิกจ่ายไปแล้ว</p><h3 className="text-2xl lg:text-3xl font-bold text-[#D76EF5] mt-2">{formatThaiCurrency(totalSpent)}</h3><p className="text-xs text-gray-400 mt-1">คิดเป็น {percentage.toFixed(1)}%</p></div><div className="p-3 bg-pink-100 rounded-2xl"><Icon name="TrendingUp" className="w-8 h-8 text-[#D76EF5]" /></div></div>
                         </Card>
                         <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-green-400">
-                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">คงเหลือสุทธิ</p><h3 className="text-2xl lg:text-3xl font-bold text-green-600 mt-2">{formatThaiCurrency(remaining)}</h3></div><div className="p-3 bg-green-100 rounded-2xl"><Icons.AlertCircle className="w-8 h-8 text-green-500" /></div></div>
+                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">คงเหลือสุทธิ</p><h3 className="text-2xl lg:text-3xl font-bold text-green-600 mt-2">{formatThaiCurrency(remaining)}</h3></div><div className="p-3 bg-green-100 rounded-2xl"><Icon name="AlertCircle" className="w-8 h-8 text-green-500" /></div></div>
                         </Card>
                     </div>
                     <div>
                         <h3 className="text-xl font-bold text-gray-800 mb-4">เมนูด่วน</h3>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            {userRole === 'admin' && <button onClick={() => setPage('RECORD')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.FilePlus2 size={32} /></div><span className="font-semibold text-gray-700">บันทึกค่าใช้จ่าย</span></button>}
-                            <button onClick={() => setPage('DASHBOARD')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.PieChart size={32} /></div><span className="font-semibold text-gray-700">สรุปงบประมาณ</span></button>
-                            {userRole === 'admin' && <button onClick={() => setPage('PROJECTS')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.FolderCog size={32} /></div><span className="font-semibold text-gray-700">จัดการโครงการ</span></button>}
-                            {userRole === 'admin' && <button onClick={() => setPage('REPORT')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.FileText size={32} /></div><span className="font-semibold text-gray-700">ออกรายงาน</span></button>}
-                            {userRole === 'admin' && <button onClick={() => setPage('ACCESS_LOGS')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.Clock size={32} /></div><span className="font-semibold text-gray-700">ประวัติการเข้าใช้งาน</span></button>}
+                            {userRole === 'admin' && <button onClick={() => setPage(Page.RECORD)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icon name="FilePlus2" size={32} /></div><span className="font-semibold text-gray-700">บันทึกค่าใช้จ่าย</span></button>}
+                            <button onClick={() => setPage(Page.DASHBOARD)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icon name="PieChart" size={32} /></div><span className="font-semibold text-gray-700">สรุปงบประมาณ</span></button>
+                            {userRole === 'admin' && <button onClick={() => setPage(Page.PROJECTS)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icon name="FolderCog" size={32} /></div><span className="font-semibold text-gray-700">จัดการโครงการ</span></button>}
+                            {userRole === 'admin' && <button onClick={() => setPage(Page.REPORT)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icon name="FileText" size={32} /></div><span className="font-semibold text-gray-700">ออกรายงาน</span></button>}
+                            {userRole === 'admin' && <button onClick={() => setPage(Page.ACCESS_LOGS)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icon name="Clock" size={32} /></div><span className="font-semibold text-gray-700">ประวัติการเข้าใช้งาน</span></button>}
                         </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -360,10 +500,12 @@
             const filteredProjects = filterGroup === 'all' ? projects : projects.filter(p => p.group === filterGroup);
             const criticalProjects = projects.filter(p => p.budget > 0 && (p.spent / p.budget) > 0.8 && p.status !== 'Closed');
 
-            const CategoryCard = ({ title, stats, color, icon }) => (
+            const CategoryCard = ({ title, stats, color, iconName }) => (
                 <div className="bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all border border-gray-100 flex flex-col justify-between h-full">
                     <div className="flex justify-between items-start mb-2">
-                        <div className={`p-3 rounded-2xl bg-opacity-10 text-white`} style={{ backgroundColor: `${color}20` }}>{icon}</div>
+                        <div className={`p-3 rounded-2xl bg-opacity-10 text-white`} style={{ backgroundColor: `${color}20` }}>
+                             <Icon name={iconName} className={`text-[${color}]`} size={24} />
+                        </div>
                         <span className="text-3xl font-bold" style={{ color: color }}>{stats.percent.toFixed(1)}%</span>
                     </div>
                     <div>
@@ -393,15 +535,15 @@
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <CategoryCard title="PJ1: งบอุดหนุนรายหัว" stats={pj1Stats} color="#8B5CF6" icon={<Icons.Wallet className="text-purple-600" size={24} />} />
-                            <CategoryCard title="PJ2: งบพัฒนาผู้เรียน" stats={pj2Stats} color="#EC4899" icon={<Icons.TrendingUp className="text-pink-600" size={24} />} />
-                            <CategoryCard title="PJ3: งบกลาง" stats={pj3Stats} color="#F59E0B" icon={<Icons.PieChart className="text-orange-600" size={24} />} />
+                            <CategoryCard title="PJ1: งบอุดหนุนรายหัว" stats={pj1Stats} color="#8B5CF6" iconName="Wallet" />
+                            <CategoryCard title="PJ2: งบพัฒนาผู้เรียน" stats={pj2Stats} color="#EC4899" iconName="TrendingUp" />
+                            <CategoryCard title="PJ3: งบกลาง" stats={pj3Stats} color="#F59E0B" iconName="PieChart" />
                         </div>
                     </div>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 border-t border-gray-200">
                         <div><h2 className="text-2xl font-bold text-gray-800">รายละเอียดรายโครงการ</h2><p className="text-sm text-gray-500 mt-1">แสดงข้อมูล {filteredProjects.length} โครงการ</p></div>
                         <div className="mt-4 md:mt-0 flex items-center space-x-2 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-                            <Icons.Filter size={18} className="text-purple-500 ml-2" />
+                            <Icon name="Filter" size={18} className="text-purple-500 ml-2" />
                             <select className="bg-transparent border-none text-sm focus:ring-0 text-gray-700 font-medium cursor-pointer outline-none pr-8" value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)}>
                                 <option value="all">ทุกกลุ่มงาน</option><option value="กลุ่มบริหารวิชาการ">กลุ่มบริหารวิชาการ</option><option value="กลุ่มบริหารงบประมาณ">กลุ่มบริหารงบประมาณ</option><option value="กลุ่มกิจการนักเรียน">กลุ่มกิจการนักเรียน</option><option value="กลุ่มบริหารทั่วไป">กลุ่มบริหารทั่วไป</option><option value="กลุ่มบริหารงานบุคคล">กลุ่มบริหารงานบุคคล</option>
                             </select>
@@ -410,7 +552,7 @@
                     {criticalProjects.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {criticalProjects.map(p => (
-                                <div key={p.id} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start shadow-sm animate-pulse"><Icons.AlertTriangle className="text-red-500 mr-3 flex-shrink-0" /><div><h4 className="font-bold text-red-700 text-sm">งบใกล้หมด: {p.name}</h4><p className="text-red-600 text-xs mt-1">ใช้จ่ายไปแล้ว {((p.spent / p.budget) * 100).toFixed(1)}% (เหลือ {p.budget - p.spent} บาท)</p></div></div>
+                                <div key={p.id} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start shadow-sm animate-pulse"><Icon name="AlertTriangle" className="text-red-500 mr-3 flex-shrink-0" /><div><h4 className="font-bold text-red-700 text-sm">งบใกล้หมด: {p.name}</h4><p className="text-red-600 text-xs mt-1">ใช้จ่ายไปแล้ว {((p.spent / p.budget) * 100).toFixed(1)}% (เหลือ {p.budget - p.spent} บาท)</p></div></div>
                             ))}
                         </div>
                     )}
@@ -430,72 +572,53 @@
             );
         };
 
-        // --- MAIN APP COMPONENT ---
         const App = () => {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [userRole, setUserRole] = useState(null);
             const [currentUser, setCurrentUser] = useState('');
-            const [currentPage, setCurrentPage] = useState('HOME');
-            const [projects, setProjects] = useState(MOCK_PROJECTS_DATA);
+            const [currentPage, setCurrentPage] = useState(Page.HOME);
+            const [projects, setProjects] = useState(MOCK_PROJECTS);
             const [accessLogs, setAccessLogs] = useState(MOCK_ACCESS_LOGS);
 
-            const handleLogin = (role, name) => {
-                setIsAuthenticated(true);
-                setUserRole(role);
-                setCurrentUser(name);
-            };
-            const handleRecordLog = (username, role, status) => {
-                setAccessLogs(prev => [{ id: accessLogs.length + 1, timestamp: new Date().toISOString(), username, role, status }, ...prev]);
-            };
-            const handleLogout = () => { setIsAuthenticated(false); setUserRole(null); setCurrentUser(''); setCurrentPage('HOME'); };
+            const handleLogin = (role, name) => { setIsAuthenticated(true); setUserRole(role); setCurrentUser(name); };
+            const handleRecordLog = (username, role, status) => { setAccessLogs(prev => [{ id: accessLogs.length + 1, timestamp: new Date().toISOString(), username, role, status }, ...prev]); };
+            const handleLogout = () => { setIsAuthenticated(false); setUserRole(null); setCurrentUser(''); setCurrentPage(Page.HOME); };
             const handleNavClick = (page) => { setCurrentPage(page); window.scrollTo(0, 0); };
 
-            // Mock Pages
-            const RecordExpense = () => <div className="p-8"><h2 className="text-2xl font-bold">บันทึกค่าใช้จ่าย</h2><p>หน้านี้สำหรับบันทึกข้อมูล (Demo Mode)</p></div>;
-            const ProjectManager = () => <div className="p-8"><h2 className="text-2xl font-bold">จัดการโครงการ</h2><p>หน้านี้สำหรับเพิ่ม/ลบ/แก้ไขโครงการ (Demo Mode)</p></div>;
-            const ReportExport = () => <div className="p-8"><h2 className="text-2xl font-bold">ออกรายงาน</h2><p>หน้านี้สำหรับพิมพ์รายงาน PDF (Demo Mode)</p></div>;
-            const AccessLogs = () => (
-                 <div className="space-y-6 animate-fade-in">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div><h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><Icons.Clock className="text-purple-600" /> ประวัติการเข้าใช้งานระบบ</h2><p className="text-gray-500 text-sm mt-1">บันทึกการเข้าสู่ระบบของผู้ดูแลและผู้ใช้งานทั้งหมด</p></div>
-                    </div>
-                    <Card className="overflow-hidden"><div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200"><thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เวลา</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้ใช้งาน</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สิทธิ์</th><th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th></tr></thead><tbody className="bg-white divide-y divide-gray-200">{accessLogs.map((log) => (<tr key={log.id} className="hover:bg-gray-50 transition-colors"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(log.timestamp).toLocaleString('th-TH')}</td><td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{log.username}</div></td><td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${log.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>{log.role.toUpperCase()}</span></td><td className="px-6 py-4 whitespace-nowrap text-center">{log.status === 'Success' ? <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium"><Icons.CheckCircle size={16} /> สำเร็จ</span> : <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium"><Icons.XCircle size={16} /> ล้มเหลว</span>}</td></tr>))}</tbody></table></div></Card>
-                 </div>
-            );
+            const allNavItems = [
+                { page: Page.HOME, label: 'หน้าแรก', iconName: 'LayoutDashboard' },
+                { page: Page.RECORD, label: 'บันทึกค่าใช้จ่าย', iconName: 'PlusCircle' },
+                { page: Page.DASHBOARD, label: 'สรุปงบประมาณ', iconName: 'PieChart' },
+                { page: Page.PROJECTS, label: 'จัดการโครงการ', iconName: 'FolderOpen' },
+                { page: Page.REPORT, label: 'ออกรายงาน', iconName: 'FileText' },
+                { page: Page.ACCESS_LOGS, label: 'ประวัติการใช้งาน', iconName: 'Clock' },
+            ];
+
+            const navItems = userRole === 'user' ? allNavItems.filter(item => [Page.HOME, Page.DASHBOARD].includes(item.page)) : allNavItems;
+            const getPageTitle = () => navItems.find(i => i.page === currentPage)?.label || 'หน้าแรก';
 
             const renderContent = () => {
                 switch (currentPage) {
-                    case 'HOME': return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
-                    case 'RECORD': return userRole === 'admin' ? <RecordExpense /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
-                    case 'DASHBOARD': return <BudgetDashboard projects={projects} />;
-                    case 'PROJECTS': return userRole === 'admin' ? <ProjectManager /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
-                    case 'REPORT': return userRole === 'admin' ? <ReportExport /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
-                    case 'ACCESS_LOGS': return userRole === 'admin' ? <AccessLogs /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case Page.HOME: return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case Page.RECORD: return userRole === 'admin' ? <RecordExpense projects={projects} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case Page.DASHBOARD: return <BudgetDashboard projects={projects} />;
+                    case Page.PROJECTS: return userRole === 'admin' ? <ProjectManager projects={projects} onUpdate={(u)=>setProjects(p=>p.map(x=>x.id===u.id?u:x))} onAdd={(n)=>setProjects(p=>[...p,n])} onDelete={(d)=>setProjects(p=>p.filter(x=>x.id!==d))} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case Page.REPORT: return userRole === 'admin' ? <ReportExport projects={projects} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case Page.ACCESS_LOGS: return userRole === 'admin' ? <AccessLogs logs={accessLogs} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
                     default: return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
                 }
             };
 
             if (!isAuthenticated) return <Login onLogin={handleLogin} onRecordLog={handleRecordLog} />;
 
-            const navItems = [
-                { page: 'HOME', label: 'หน้าแรก', icon: <Icons.LayoutDashboard size={20} /> },
-                { page: 'RECORD', label: 'บันทึกค่าใช้จ่าย', icon: <Icons.PlusCircle size={20} /> },
-                { page: 'DASHBOARD', label: 'สรุปงบประมาณ', icon: <Icons.PieChart size={20} /> },
-                { page: 'PROJECTS', label: 'จัดการโครงการ', icon: <Icons.FolderOpen size={20} /> },
-                { page: 'REPORT', label: 'ออกรายงาน', icon: <Icons.FileText size={20} /> },
-                { page: 'ACCESS_LOGS', label: 'ประวัติการใช้งาน', icon: <Icons.Clock size={20} /> },
-            ];
-            const activeNavItems = userRole === 'user' ? navItems.filter(i => ['HOME', 'DASHBOARD'].includes(i.page)) : navItems;
-            const getPageTitle = () => navItems.find(i => i.page === currentPage)?.label || 'หน้าแรก';
-
             return (
                 <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden">
                     <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0">
                         <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100"><img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" /><div><h1 className="font-bold text-lg text-gray-800 leading-tight">Prajak Budget</h1><span className="text-xs text-purple-600 font-bold tracking-wider">ปีงบประมาณ 2569</span></div></div>
                         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-                            {activeNavItems.map(item => (
+                            {navItems.map(item => (
                                 <button key={item.page} onClick={() => handleNavClick(item.page)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${currentPage === item.page ? `${THEME_GRADIENT} text-white shadow-lg shadow-purple-200` : 'text-gray-500 hover:bg-purple-50 hover:text-purple-600'}`}>
-                                    {item.icon} {item.label}
+                                    <Icon name={item.iconName} size={20} /> {item.label}
                                 </button>
                             ))}
                         </nav>
@@ -504,7 +627,7 @@
                     <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
                         <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
                             <div><h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2><p className="text-sm text-gray-500 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p></div>
-                            <div className="flex items-center gap-4"><button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative"><Icons.Bell size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button><div className="h-8 w-px bg-gray-200 mx-2"></div><button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"><Icons.LogOut size={18} /><span className="hidden sm:inline">ออกจากระบบ</span></button></div>
+                            <div className="flex items-center gap-4"><button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative"><Icon name="Bell" size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button><div className="h-8 w-px bg-gray-200 mx-2"></div><button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"><Icon name="LogOut" size={18} /><span className="hidden sm:inline">ออกจากระบบ</span></button></div>
                         </header>
                         <main className="flex-1 overflow-y-auto p-4 lg:p-8">{renderContent()}<div className="h-8"></div></main>
                     </div>
@@ -512,7 +635,10 @@
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        // ==========================================
+        // 4. APP MOUNTING
+        // ==========================================
+        const root = createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
