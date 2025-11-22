@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ระบบติดตามงบประมาณ - โรงเรียนประจักษ์ศิลปาคม</title>
+    
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Load Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 3. Load React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 4. Load Babel (to compile JSX in browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 5. Load Recharts (Charts Library) -->
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #F7F9FC;
+        }
+        /* Custom Animations */
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+        @keyframes scale-up {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-up {
+            animation: scale-up 0.3s ease-out forwards;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- THE APP LOGIC -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { 
+            BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+            PieChart, Pie, Cell, Legend 
+        } = Recharts;
+
+        // --- 1. ICONS (SVG Components) ---
+        const Icons = {
+            LayoutDashboard: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+            PlusCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>,
+            PieChart: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
+            FolderOpen: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>,
+            FileText: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
+            Clock: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Bell: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>,
+            LogOut: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+            Wallet: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5Zm-10 0h.01M11 12h.01"/></svg>,
+            TrendingUp: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+            AlertCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
+            FilePlus2: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><path d="M14 2v6h6"/><path d="M3 15h6"/><path d="M6 12v6"/></svg>,
+            FolderCog: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10.5 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v3.3"/><circle cx="18" cy="18" r="3"/><path d="m18 14 .1.3"/><path d="m15.1 15.1.3.1"/><path d="m14 18 .3.1"/><path d="m15.1 20.9.3-.1"/><path d="m18 22 .1-.3"/><path d="m20.9 20.9-.1-.3"/><path d="m22 18-.3-.1"/><path d="m20.9 15.1-.1-.3"/></svg>,
+            Lock: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            User: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            LogIn: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
+            CheckCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            XCircle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>,
+            Search: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Filter: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+            AlertTriangle: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
+            Plus: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            Edit: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
+            Trash2: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            MoreVertical: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>,
+            X: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>,
+            Calendar: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+            Download: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Printer: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>,
+            Save: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Shield: ({size=24, className}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        };
+
+        // --- 2. DATA & CONSTANTS ---
+        const THEME_GRADIENT = "bg-gradient-to-r from-[#6A4DE8] to-[#D76EF5]";
+        const LOGO_URL = "https://img2.pic.in.th/pic/23847230_1753798167972527_6171827179803949950_o.md.png";
+        
+        const MOCK_ACCESS_LOGS = [
+            { id: 1, timestamp: '2025-10-01 08:30:00', username: 'admin', role: 'admin', status: 'Success' },
+            { id: 2, timestamp: '2025-10-01 09:15:00', username: 'ชัชตะวัน', role: 'user', status: 'Success' },
+            { id: 3, timestamp: '2025-10-02 10:00:00', username: 'ภราดร', role: 'user', status: 'Success' },
+        ];
+
+        const MOCK_PROJECTS_DATA = [
+            { id: 101, name: "[PJ1-1] จัดซื้อวัสดุการจัดการเรียนการสอนทุกกลุ่มสาระ", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 50356, spent: 0, category: "งบอุดหนุน", status: "Active" },
+            { id: 102, name: "[PJ1-2] โครงการค่าใช้จ่ายสาธารณูปโภค (ค่าไฟฟ้า ค่าอินเทอร์เน็ต)", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 283500, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 103, name: "[PJ1-3] โครงการจัดซื้อวัสดุ อุปกรณ์ เพื่อเพิ่มประสิทธิภาพการทำงานและสนับสนุนงาน", group: "กลุ่มบริหารงบประมาณ", owner: "ไม่ระบุ", budget: 22000, spent: 0, category: "งบลงทุน", status: "Active" },
+            { id: 104, name: "[PJ1-4] โครงการจัดทำแผนปฏิบัติการประจำปี", group: "กลุ่มบริหารงบประมาณ", owner: "ไม่ระบุ", budget: 0, spent: 0, category: "งบดำเนินงาน", status: "Closed" },
+            { id: 105, name: "[PJ1-5] โครงการส่งเสริมระเบียบวินัยในโรงเรียน", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 106, name: "[PJ1-6] โครงการจัดซื้อเวทีอเนกประสงค์เพื่อพัฒนาศักยภาพนักเรียนและสนับสนุนกิจกรรมโรงเรียน", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 0, spent: 0, category: "งบลงทุน", status: "Closed" },
+            { id: 107, name: "[PJ1-7] โครงการจัดซื้ออุปกรณ์ถ่ายภาพ", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 6000, spent: 0, category: "งบลงทุน", status: "Active" },
+            { id: 108, name: "[PJ1-8] โครงการประชุมกรรมการสถานศึกษา", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 109, name: "[PJ1-9] โครงการจัดหาสื่อและเทคโนโลยีสำหรับ ครู นักเรียนและบุคลากรทางการศึกษา", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 75000, spent: 0, category: "งบอุดหนุน", status: "Active" },
+            { id: 110, name: "[PJ1-10] โครงการจัดซื้อยา และเวชภัณฑ์", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 4105, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 112, name: "[PJ1-12] โครงการรับนักเรียนปีการศึกษา 2569", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 113, name: "[PJ1-13] กิจกรรมวันสถาปนาโรงเรียน และบวงสรวงกรมหลวงประจักษ์", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 8000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 114, name: "[PJ1-14] โครงการปรับปรุงภูมิทัศน์ภายในโรงเรียนและปรับปรุงซ่อมแซมห้องเรียน ห้องปฏิบัติการ", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 20000, spent: 0, category: "งบลงทุน", status: "Active" },
+            { id: 115, name: "[PJ1-15] โครงการเยี่ยมบ้านนักเรียน", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 18000, spent: 0, category: "งบเงินอุดหนุน", status: "Active" },
+            { id: 116, name: "[PJ1-16] โครงการประชุมผู้ปกครองชั้นเรียน", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 7000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 117, name: "[PJ1-17] โครงการพัฒนาบุคลากร(ดูงาน)", group: "กลุ่มบริหารงานบุคคล", owner: "ไม่ระบุ", budget: 40000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 118, name: "[PJ1-18] โครงการพัฒนาครูต้นแบบ", group: "กลุ่มบริหารงานบุคคล", owner: "ไม่ระบุ", budget: 5356, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 119, name: "[PJ1-19] โครงการเสริมประสิทธิภาพการจัดการเรียนการสอน", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 314000, spent: 0, category: "งบอุดหนุน", status: "Active" },
+            { id: 121, name: "[PJ1-21] โครงการปัจฉิมนิเทศ ม.3 และ ม.6", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 13000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 123, name: "[PJ1-23] โครงการพัฒนาโรงเรียนสุจริต", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 124, name: "[PJ1-24] โครงการแนะแนวเพื่อศึกษาต่อ (ม1,ม4)", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 10000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 128, name: "[PJ1-28] โครงการสวนพฤกษศาสตร์", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 129, name: "[PJ1-29] โครงการปฐมนิเทศนักเรียน", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 3500, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 131, name: "[PJ1-31] โครงการพัฒนาโรงเรียนด้วยเทคโนโลยีดิจิทัลและนวัตกรรมการศึกษา", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 11850, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 132, name: "[PJ1-32] โครงการ ห้องสมุดมีชีวิต", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 133, name: "[PJ1-33] โครงการจัดหาสื่อและเทคโนโลยีเพื่อพัฒนาคุณภาพผู้เรียน", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 20000, spent: 0, category: "งบอุดหนุน", status: "Active" },
+            { id: 134, name: "[PJ1-34] โครงการสถานศึกษาปลอดบุหรี่", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 2000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 135, name: "[PJ1-35] โครงการสถานศึกษาสีขาว", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 136, name: "[PJ1-36] โครงการ TO BE NUMBER ONE", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 137, name: "[PJ1-37] โครงการส่งเสริมประชาธิปไตย", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 500, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 138, name: "[PJ1-38] โครงการกิจกรรมไหว้ครู", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 139, name: "[PJ1-39] โครงการวันเอดส์โลก", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 1000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 140, name: "[PJ1-40] โครงการโรงเรียนส่งเสริมความปลอดภัย", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 141, name: "[PJ1-41] โครงการยกระดับการส่งเสริมกิจกรรมทางกายเพื่อเด็กวัยเรียน วัยรุ่น สูง ดี สมส่วน แข็งแรง", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 142, name: "[PJ1-42] โครงการวันคริสมาสต์และสัปดาห์ Language Battle 2025 : ศึกชิงเจ้าภาษา", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 10000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 143, name: "[PJ1-43] โครงการวันสุนทรภู่สู่วันภาษาไทย", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 8000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 144, name: "[PJ1-44] โครงการจัดซื้อวัสดุกีฬา", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบลงทุน", status: "Active" },
+            { id: 145, name: "[PJ1-45] โครงการจัดนิทรรศการโครงงานอาชีพ", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 146, name: "[PJ1-46] โครงการจัดหาสื่อและเทคโนโลยีเพื่อพัฒนาคุณภาพผู้เรียน", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 15000, spent: 0, category: "งบอุดหนุน", status: "Active" },
+            { id: 147, name: "[PJ1-47] โครงการแข่งขันกีฬภายในโรงเรียนประจักษ์ศิลปาคม", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 22000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 149, name: "[PJ1-49] โครงการจัดซื้อวัสดุอุปกรณ์กีฬา", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบลงทุน", status: "Active" },
+            { id: 151, name: "[PJ1-51] โครงการวันสำคัญทางพระพุทธศาสนา", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 8000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 153, name: "[PJ1-53] โครงการส่งเสริม พัฒนาศูนย์การเรียนรู้ตามหลักปรัชญาเศรษฐกิจพอเพียงฯ", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 30000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 154, name: "[PJ1-54] โครงการศึกษาแหล่งเรียนรู้ทางประวัติศาสตร์เมืองอุดรธานี", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 155, name: "[PJ1-55] โครงการวันแม่", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 156, name: "[PJ1-56] โครงการวันพ่อ", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 158, name: "[PJ1-58] โครงการพัฒนางานแนะแนว โรงเรียนประจักษ์ศิลปาคม", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 17000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 201, name: "[PJ2-1] โครงการอบรมพัฒนานักเรียนเพื่อนที่ปรึกษา YC : Youth counselor", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 20000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 202, name: "[PJ2-2] โครงการเข้าค่ายลูกเสือ-เนตรนารี สามัญรุ่นใหญ่", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 22000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 203, name: "[PJ2-3] โครงการยกระดับผลสัมฤทธิ์ทางการเรียนกลุ่มสาระวิทยาศาสตร์และเทคโนโลยี", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 5000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 204, name: "[PJ2-4] โครงการยกระดับผลสัมฤทธิ์ทางวิชาการ (ติว โอเนต ม.3,ม.6)", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 13400, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 205, name: "[PJ2-5] โครงการแข่งขันทักษะวิชาการ (งานศิลปหัตถกรรม)", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 30000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 206, name: "[PJ2-6] โครงการค่ายพัฒนาศักยภาพทางวิทยาศาสตร์และเทคโนโลยี", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 35000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 207, name: "[PJ2-7] โครงการ English and Chinese Camp", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 20000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 208, name: "[PJ2-8] โครงการทัศนศึกษาแหล่งเรียนรู้", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 70000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 209, name: "[PJ2-9] โครงการส่งเสริมความเป็นเลิศด้านดนตรีและนาฏศิลป์ สู่ศิลปินมืออาชีพ", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 40000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 210, name: "[PJ2-10] โครงการค่ายคณิตศาสตร์", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 11600, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 211, name: "[PJ2-11] โครงการค่ายพัฒนาคุณธรรม จริยธรรมนักเรียน", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 20000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 212, name: "[PJ2-12] โครงการค่ายปรับพื้นฐานคุณลักษณะอันพึงประสงค์", group: "กลุ่มกิจการนักเรียน", owner: "ไม่ระบุ", budget: 3000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 213, name: "[PJ2-13] โครงการส่งเสริมความปลอดภัย(ว่ายน้ำเพื่อชีวิต)", group: "กลุ่มบริหารทั่วไป", owner: "ไม่ระบุ", budget: 35000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 214, name: "[PJ2-14] โครงการรู้เท่าทันสื่อและเทคโนโลยี", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 2993, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 215, name: "[PJ2-15] โครงการส่งเสริมทักษะอาชีพ 'ตลาดนัดทองหลาง' สร้างโอกาส สร้างอนาคต", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 15000, spent: 0, category: "งบกิจกรรมพัฒนาผู้เรียน", status: "Active" },
+            { id: 216, name: "[PJ2-16] โครงการพัฒนาการอ่านออกเขียนได้", group: "กลุ่มบริหารวิชาการ", owner: "ไม่ระบุ", budget: 1000, spent: 0, category: "งบดำเนินงาน", status: "Active" },
+            { id: 301, name: "[PJ3-1] หักงบกลาง 10%", group: "กลุ่มบริหารงบประมาณ", owner: "ไม่ระบุ", budget: 72356, spent: 0, category: "งบกลาง", status: "Active" }
+        ];
+
+        const CHART_DATA_MONTHLY = [
+            { name: 'ต.ค. 68', spending: 0 }, { name: 'พ.ย. 68', spending: 0 }, { name: 'ธ.ค. 68', spending: 0 },
+            { name: 'ม.ค. 69', spending: 0 }, { name: 'ก.พ. 69', spending: 0 }, { name: 'มี.ค. 69', spending: 0 },
+            { name: 'เม.ย. 69', spending: 0 }, { name: 'พ.ค. 69', spending: 0 }, { name: 'มิ.ย. 69', spending: 0 },
+            { name: 'ก.ค. 69', spending: 0 }, { name: 'ส.ค. 69', spending: 0 }, { name: 'ก.ย. 69', spending: 0 },
+        ];
+
+        // --- 3. UI COMPONENTS ---
+        
+        const Card = ({ children, className = "", title, action }) => (
+            <div className={`bg-white rounded-3xl shadow-lg p-6 ${className} transition-all duration-300 hover:shadow-xl`}>
+                {(title || action) && (
+                    <div className="flex justify-between items-center mb-4">
+                        {title && <h3 className="text-xl font-bold text-gray-800">{title}</h3>}
+                        {action && <div>{action}</div>}
+                    </div>
+                )}
+                {children}
+            </div>
+        );
+
+        const Login = ({ onLogin, onRecordLog }) => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const AUTHORIZED_USERS = ["ชัชตะวัน", "ภราดร", "ภาคภูมิ", "ทิวาวรรณ", "วัชรี", "บุญญาภรณ์", "อัญชนีย์", "วลัยรัตน์", "บุญจันทร์", "ยุทธไกร", "กันต์ฤทัย", "เสาวภา", "อภิชาติ", "สุภาภรณ์", "วิษณุ", "จักรพงษ์", "บุญเสริม", "อุดมวิทย์", "พงษ์เพชร", "ชลฎา", "ปภัสพ์มณ", "ตรีนัทธ์ธนา", "วชิรวิทย์", "ศิรินภา"];
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                setError('');
+                const cleanUsername = username.trim();
+                const cleanPassword = password.trim();
+
+                if (cleanUsername === 'admin' && cleanPassword === 'admin4444') {
+                    onRecordLog(cleanUsername, 'admin', 'Success');
+                    onLogin('admin', 'ผู้ดูแลระบบ (Admin)');
+                    return;
+                }
+                if (AUTHORIZED_USERS.includes(cleanUsername) && cleanPassword === 'PJ123') {
+                    onRecordLog(cleanUsername, 'user', 'Success');
+                    onLogin('user', `คุณ${cleanUsername}`);
+                    return;
+                }
+                onRecordLog(cleanUsername, 'unknown', 'Failed');
+                setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC] p-4 font-sans relative overflow-hidden">
+                     <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-purple-100 to-transparent -z-10"></div>
+                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
+                        <div className={`${THEME_GRADIENT} p-8 text-center relative`}>
+                            <div className="w-32 h-32 flex items-center justify-center mx-auto mb-4">
+                               <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
+                            </div>
+                            <h1 className="text-2xl font-bold text-white">Prajak Budget 2569</h1>
+                            <p className="text-purple-100 text-sm mt-1">ระบบติดตามการใช้งบประมาณโรงเรียน</p>
+                        </div>
+                        <div className="p-8">
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl flex items-center"><Icons.AlertTriangle size={16} className="mr-2" />{error}</div>}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1 ml-1">ชื่อผู้ใช้</label>
+                                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="ระบุชื่อผู้ใช้" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1 ml-1">รหัสผ่าน</label>
+                                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" placeholder="ระบุรหัสผ่าน" required />
+                                </div>
+                                <button type="submit" className={`w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white ${THEME_GRADIENT} hover:opacity-90`}>
+                                    <Icons.LogIn size={18} /> เข้าสู่ระบบ
+                                </button>
+                            </form>
+                             <div className="mt-8 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                                <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><Icons.AlertCircle size={16} className="text-purple-500" /> คำแนะนำสำหรับผู้ใช้</h4>
+                                <ul className="text-xs text-gray-500 space-y-1 ml-1">
+                                    <li>• <strong>ชื่อผู้ใช้:</strong> ใช้ชื่อจริงภาษาไทย (เช่น ชัชตะวัน)</li>
+                                    <li>• <strong>รหัสผ่าน:</strong> PJ123</li>
+                                </ul>
+                             </div>
+                        </div>
+                     </div>
+                </div>
+            );
+        };
+
+        const Home = ({ setPage, projects, username, userRole }) => {
+            const totalBudget = projects.reduce((acc, curr) => acc + curr.budget, 0);
+            const totalSpent = projects.reduce((acc, curr) => acc + curr.spent, 0);
+            const remaining = totalBudget - totalSpent;
+            const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+            const formatThaiCurrency = (amount) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(amount);
+
+            const pieChartData = projects.reduce((acc, project) => {
+                let category = 'งบอุดหนุนรายหัว (PJ1)'; 
+                if (project.id >= 300) category = 'งบกลาง (PJ3)';
+                else if (project.id >= 200) category = 'งบพัฒนาผู้เรียน (PJ2)';
+                const existing = acc.find(item => item.name === category);
+                if (existing) existing.value += project.budget;
+                else acc.push({ name: category, value: project.budget });
+                return acc;
+            }, []);
+            const order = ['งบอุดหนุนรายหัว (PJ1)', 'งบพัฒนาผู้เรียน (PJ2)', 'งบกลาง (PJ3)'];
+            pieChartData.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+            const CATEGORY_COLORS = ['#6A4DE8', '#D76EF5', '#FDBA74'];
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <div><h2 className="text-3xl font-bold text-gray-800">ยินดีต้อนรับ, {username}</h2><p className="text-gray-500 mt-1">ภาพรวมงบประมาณ โรงเรียนประจักษ์ศิลปาคม ปี 2569</p></div>
+                        <div className="mt-4 md:mt-0"><span className="px-4 py-2 bg-white rounded-full shadow text-sm text-gray-600 font-medium">📅 วันนี้: {new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</span></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-[#6A4DE8]">
+                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">งบประมาณได้รับจัดสรร</p><h3 className="text-2xl lg:text-3xl font-bold text-gray-800 mt-2">{formatThaiCurrency(totalBudget)}</h3></div><div className="p-3 bg-purple-100 rounded-2xl"><Icons.Wallet className="w-8 h-8 text-[#6A4DE8]" /></div></div>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-[#D76EF5]">
+                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">เบิกจ่ายไปแล้ว</p><h3 className="text-2xl lg:text-3xl font-bold text-[#D76EF5] mt-2">{formatThaiCurrency(totalSpent)}</h3><p className="text-xs text-gray-400 mt-1">คิดเป็น {percentage.toFixed(1)}%</p></div><div className="p-3 bg-pink-100 rounded-2xl"><Icons.TrendingUp className="w-8 h-8 text-[#D76EF5]" /></div></div>
+                        </Card>
+                        <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-green-400">
+                            <div className="flex items-center justify-between"><div><p className="text-gray-500 text-sm font-medium">คงเหลือสุทธิ</p><h3 className="text-2xl lg:text-3xl font-bold text-green-600 mt-2">{formatThaiCurrency(remaining)}</h3></div><div className="p-3 bg-green-100 rounded-2xl"><Icons.AlertCircle className="w-8 h-8 text-green-500" /></div></div>
+                        </Card>
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">เมนูด่วน</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            {userRole === 'admin' && <button onClick={() => setPage('RECORD')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.FilePlus2 size={32} /></div><span className="font-semibold text-gray-700">บันทึกค่าใช้จ่าย</span></button>}
+                            <button onClick={() => setPage('DASHBOARD')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.PieChart size={32} /></div><span className="font-semibold text-gray-700">สรุปงบประมาณ</span></button>
+                            {userRole === 'admin' && <button onClick={() => setPage('PROJECTS')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.FolderCog size={32} /></div><span className="font-semibold text-gray-700">จัดการโครงการ</span></button>}
+                            {userRole === 'admin' && <button onClick={() => setPage('REPORT')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.FileText size={32} /></div><span className="font-semibold text-gray-700">ออกรายงาน</span></button>}
+                            {userRole === 'admin' && <button onClick={() => setPage('ACCESS_LOGS')} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3"><div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}><Icons.Clock size={32} /></div><span className="font-semibold text-gray-700">ประวัติการเข้าใช้งาน</span></button>}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card title="การเบิกจ่ายรายเดือน (ตัวอย่าง)">
+                            <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={CHART_DATA_MONTHLY}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                        <YAxis axisLine={false} tickLine={false} />
+                                        <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                        <Bar dataKey="spending" fill="#6A4DE8" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Card>
+                        <Card title="สัดส่วนงบประมาณตามกลุ่มโครงการ">
+                            <div className="h-64 w-full flex justify-center items-center">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                            {pieChartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />))}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ borderRadius: '12px' }} formatter={(value) => formatThaiCurrency(value)} />
+                                        <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            );
+        };
+
+        const BudgetDashboard = ({ projects }) => {
+            const [filterGroup, setFilterGroup] = useState('all');
+            const getStats = (projs) => {
+                const budget = projs.reduce((sum, p) => sum + p.budget, 0);
+                const spent = projs.reduce((sum, p) => sum + p.spent, 0);
+                const remaining = budget - spent;
+                const percent = budget > 0 ? (spent / budget) * 100 : 0;
+                return { budget, spent, remaining, percent };
+            };
+            const totalStats = getStats(projects);
+            const pj1Stats = getStats(projects.filter(p => p.id >= 100 && p.id < 200));
+            const pj2Stats = getStats(projects.filter(p => p.id >= 200 && p.id < 300));
+            const pj3Stats = getStats(projects.filter(p => p.id >= 300));
+            const overallChartData = [{ name: 'Used', value: totalStats.spent }, { name: 'Remaining', value: totalStats.remaining }];
+            const filteredProjects = filterGroup === 'all' ? projects : projects.filter(p => p.group === filterGroup);
+            const criticalProjects = projects.filter(p => p.budget > 0 && (p.spent / p.budget) > 0.8 && p.status !== 'Closed');
+
+            const CategoryCard = ({ title, stats, color, icon }) => (
+                <div className="bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all border border-gray-100 flex flex-col justify-between h-full">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className={`p-3 rounded-2xl bg-opacity-10 text-white`} style={{ backgroundColor: `${color}20` }}>{icon}</div>
+                        <span className="text-3xl font-bold" style={{ color: color }}>{stats.percent.toFixed(1)}%</span>
+                    </div>
+                    <div>
+                        <h4 className="text-gray-600 font-bold text-sm mb-2">{title}</h4>
+                        <div className="flex items-end justify-between mb-2"><div className="flex flex-col"><span className="text-xs text-gray-400">คงเหลือ</span><span className="text-lg font-bold text-gray-800">{stats.remaining.toLocaleString()}</span></div><div className="text-right"><span className="text-xs text-gray-400 block">งบประมาณ</span><span className="text-xs font-medium text-gray-600">{stats.budget.toLocaleString()}</span></div></div>
+                        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden"><div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${stats.percent}%`, backgroundColor: color }}></div></div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-3xl shadow-lg p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                            <div className="flex-1 text-center md:text-left z-10">
+                                <h2 className="text-3xl font-bold text-gray-800 mb-2">ภาพรวมการเบิกจ่ายงบประมาณ</h2>
+                                <p className="text-gray-500 mb-6">สรุปสถานะงบประมาณรวมทุกหมวด (PJ1, PJ2, PJ3) ปี 2569</p>
+                                <div className="flex gap-4 justify-center md:justify-start">
+                                    <div className="bg-purple-50 px-6 py-3 rounded-2xl border border-purple-100"><p className="text-xs text-purple-600 font-bold uppercase tracking-wider">งบประมาณรวม</p><p className="text-2xl font-bold text-gray-800">{totalStats.budget.toLocaleString()}</p></div>
+                                    <div className="bg-green-50 px-6 py-3 rounded-2xl border border-green-100"><p className="text-xs text-green-600 font-bold uppercase tracking-wider">คงเหลือสุทธิ</p><p className="text-2xl font-bold text-green-600">{totalStats.remaining.toLocaleString()}</p></div>
+                                </div>
+                            </div>
+                            <div className="relative w-64 h-64 flex-shrink-0">
+                                <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={overallChartData} innerRadius={80} outerRadius={100} startAngle={90} endAngle={-270} dataKey="value" stroke="none"><Cell fill="#6A4DE8" /><Cell fill="#F3F4F6" /></Pie></PieChart></ResponsiveContainer>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-5xl font-bold text-[#6A4DE8]">{totalStats.percent.toFixed(1)}%</span><span className="text-sm text-gray-400 uppercase font-medium mt-1">ใช้ไปแล้ว</span></div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <CategoryCard title="PJ1: งบอุดหนุนรายหัว" stats={pj1Stats} color="#8B5CF6" icon={<Icons.Wallet className="text-purple-600" size={24} />} />
+                            <CategoryCard title="PJ2: งบพัฒนาผู้เรียน" stats={pj2Stats} color="#EC4899" icon={<Icons.TrendingUp className="text-pink-600" size={24} />} />
+                            <CategoryCard title="PJ3: งบกลาง" stats={pj3Stats} color="#F59E0B" icon={<Icons.PieChart className="text-orange-600" size={24} />} />
+                        </div>
+                    </div>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 border-t border-gray-200">
+                        <div><h2 className="text-2xl font-bold text-gray-800">รายละเอียดรายโครงการ</h2><p className="text-sm text-gray-500 mt-1">แสดงข้อมูล {filteredProjects.length} โครงการ</p></div>
+                        <div className="mt-4 md:mt-0 flex items-center space-x-2 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+                            <Icons.Filter size={18} className="text-purple-500 ml-2" />
+                            <select className="bg-transparent border-none text-sm focus:ring-0 text-gray-700 font-medium cursor-pointer outline-none pr-8" value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)}>
+                                <option value="all">ทุกกลุ่มงาน</option><option value="กลุ่มบริหารวิชาการ">กลุ่มบริหารวิชาการ</option><option value="กลุ่มบริหารงบประมาณ">กลุ่มบริหารงบประมาณ</option><option value="กลุ่มกิจการนักเรียน">กลุ่มกิจการนักเรียน</option><option value="กลุ่มบริหารทั่วไป">กลุ่มบริหารทั่วไป</option><option value="กลุ่มบริหารงานบุคคล">กลุ่มบริหารงานบุคคล</option>
+                            </select>
+                        </div>
+                    </div>
+                    {criticalProjects.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {criticalProjects.map(p => (
+                                <div key={p.id} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start shadow-sm animate-pulse"><Icons.AlertTriangle className="text-red-500 mr-3 flex-shrink-0" /><div><h4 className="font-bold text-red-700 text-sm">งบใกล้หมด: {p.name}</h4><p className="text-red-600 text-xs mt-1">ใช้จ่ายไปแล้ว {((p.spent / p.budget) * 100).toFixed(1)}% (เหลือ {p.budget - p.spent} บาท)</p></div></div>
+                            ))}
+                        </div>
+                    )}
+                    <Card className="overflow-hidden mt-4">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อโครงการ</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">กลุ่มงาน</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">งบได้รับ</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ใช้ไป</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">คงเหลือ</th><th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th></tr></thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredProjects.map((project) => (
+                                        <tr key={project.id} className="hover:bg-gray-50 transition-colors"><td className="px-6 py-4"><div className="text-sm font-medium text-gray-900 line-clamp-1">{project.name}</div></td><td className="px-6 py-4 whitespace-nowrap"><span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">{project.group}</span></td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{project.budget.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{project.spent.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 text-right font-bold">{(project.budget - project.spent).toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap text-center">{project.status === 'Active' ? <div className="w-2 h-2 bg-green-500 rounded-full mx-auto"></div> : <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto"></div>}</td></tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [userRole, setUserRole] = useState(null);
+            const [currentUser, setCurrentUser] = useState('');
+            const [currentPage, setCurrentPage] = useState('HOME');
+            const [projects, setProjects] = useState(MOCK_PROJECTS_DATA);
+            const [accessLogs, setAccessLogs] = useState(MOCK_ACCESS_LOGS);
+
+            const handleLogin = (role, name) => {
+                setIsAuthenticated(true);
+                setUserRole(role);
+                setCurrentUser(name);
+            };
+            const handleRecordLog = (username, role, status) => {
+                setAccessLogs(prev => [{ id: accessLogs.length + 1, timestamp: new Date().toISOString(), username, role, status }, ...prev]);
+            };
+            const handleLogout = () => { setIsAuthenticated(false); setUserRole(null); setCurrentUser(''); setCurrentPage('HOME'); };
+            const handleNavClick = (page) => { setCurrentPage(page); window.scrollTo(0, 0); };
+
+            // Mock Pages
+            const RecordExpense = () => <div className="p-8"><h2 className="text-2xl font-bold">บันทึกค่าใช้จ่าย</h2><p>หน้านี้สำหรับบันทึกข้อมูล (Demo Mode)</p></div>;
+            const ProjectManager = () => <div className="p-8"><h2 className="text-2xl font-bold">จัดการโครงการ</h2><p>หน้านี้สำหรับเพิ่ม/ลบ/แก้ไขโครงการ (Demo Mode)</p></div>;
+            const ReportExport = () => <div className="p-8"><h2 className="text-2xl font-bold">ออกรายงาน</h2><p>หน้านี้สำหรับพิมพ์รายงาน PDF (Demo Mode)</p></div>;
+            const AccessLogs = () => (
+                 <div className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div><h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><Icons.Clock className="text-purple-600" /> ประวัติการเข้าใช้งานระบบ</h2><p className="text-gray-500 text-sm mt-1">บันทึกการเข้าสู่ระบบของผู้ดูแลและผู้ใช้งานทั้งหมด</p></div>
+                    </div>
+                    <Card className="overflow-hidden"><div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-200"><thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เวลา</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้ใช้งาน</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สิทธิ์</th><th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th></tr></thead><tbody className="bg-white divide-y divide-gray-200">{accessLogs.map((log) => (<tr key={log.id} className="hover:bg-gray-50 transition-colors"><td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(log.timestamp).toLocaleString('th-TH')}</td><td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{log.username}</div></td><td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${log.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>{log.role.toUpperCase()}</span></td><td className="px-6 py-4 whitespace-nowrap text-center">{log.status === 'Success' ? <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium"><Icons.CheckCircle size={16} /> สำเร็จ</span> : <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium"><Icons.XCircle size={16} /> ล้มเหลว</span>}</td></tr>))}</tbody></table></div></Card>
+                 </div>
+            );
+
+            const renderContent = () => {
+                switch (currentPage) {
+                    case 'HOME': return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case 'RECORD': return userRole === 'admin' ? <RecordExpense /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case 'DASHBOARD': return <BudgetDashboard projects={projects} />;
+                    case 'PROJECTS': return userRole === 'admin' ? <ProjectManager /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case 'REPORT': return userRole === 'admin' ? <ReportExport /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    case 'ACCESS_LOGS': return userRole === 'admin' ? <AccessLogs /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                    default: return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+                }
+            };
+
+            if (!isAuthenticated) return <Login onLogin={handleLogin} onRecordLog={handleRecordLog} />;
+
+            const navItems = [
+                { page: 'HOME', label: 'หน้าแรก', icon: <Icons.LayoutDashboard size={20} /> },
+                { page: 'RECORD', label: 'บันทึกค่าใช้จ่าย', icon: <Icons.PlusCircle size={20} /> },
+                { page: 'DASHBOARD', label: 'สรุปงบประมาณ', icon: <Icons.PieChart size={20} /> },
+                { page: 'PROJECTS', label: 'จัดการโครงการ', icon: <Icons.FolderOpen size={20} /> },
+                { page: 'REPORT', label: 'ออกรายงาน', icon: <Icons.FileText size={20} /> },
+                { page: 'ACCESS_LOGS', label: 'ประวัติการใช้งาน', icon: <Icons.Clock size={20} /> },
+            ];
+            const activeNavItems = userRole === 'user' ? navItems.filter(i => ['HOME', 'DASHBOARD'].includes(i.page)) : navItems;
+            const getPageTitle = () => navItems.find(i => i.page === currentPage)?.label || 'หน้าแรก';
+
+            return (
+                <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden">
+                    <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0">
+                        <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100"><img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" /><div><h1 className="font-bold text-lg text-gray-800 leading-tight">Prajak Budget</h1><span className="text-xs text-purple-600 font-bold tracking-wider">ปีงบประมาณ 2569</span></div></div>
+                        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+                            {activeNavItems.map(item => (
+                                <button key={item.page} onClick={() => handleNavClick(item.page)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${currentPage === item.page ? `${THEME_GRADIENT} text-white shadow-lg shadow-purple-200` : 'text-gray-500 hover:bg-purple-50 hover:text-purple-600'}`}>
+                                    {item.icon} {item.label}
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="p-4 border-t border-gray-100"><div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">{currentUser.charAt(0)}</div><div className="overflow-hidden"><p className="text-sm font-bold text-gray-700 truncate">{currentUser}</p><p className="text-xs text-gray-500">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p></div></div></div>
+                    </aside>
+                    <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
+                        <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
+                            <div><h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2><p className="text-sm text-gray-500 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p></div>
+                            <div className="flex items-center gap-4"><button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative"><Icons.Bell size={20} /><span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button><div className="h-8 w-px bg-gray-200 mx-2"></div><button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"><Icons.LogOut size={18} /><span className="hidden sm:inline">ออกจากระบบ</span></button></div>
+                        </header>
+                        <main className="flex-1 overflow-y-auto p-4 lg:p-8">{renderContent()}<div className="h-8"></div></main>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
