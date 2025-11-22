@@ -78,6 +78,20 @@ const App: React.FC = () => {
     setProjects(prev => prev.filter(p => p.id !== id));
   };
 
+  // New function to handle recording expenses and updating project state
+  const handleRecordExpense = (projectId: number, amount: number) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          spent: p.spent + amount,
+          status: (p.spent + amount) > p.budget ? 'Warning' : p.status
+        };
+      }
+      return p;
+    }));
+  };
+
   const getPageTitle = () => {
       const item = allNavItems.find(i => i.page === currentPage);
       return item ? item.label : 'หน้าแรก';
@@ -88,7 +102,12 @@ const App: React.FC = () => {
       case Page.HOME: 
         return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
       case Page.RECORD: 
-        return userRole === 'admin' ? <RecordExpense projects={projects} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        return userRole === 'admin' ? (
+          <RecordExpense 
+            projects={projects} 
+            onRecord={handleRecordExpense}
+          />
+        ) : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
       case Page.DASHBOARD: 
         return <BudgetDashboard projects={projects} />;
       case Page.PROJECTS: 

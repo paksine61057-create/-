@@ -1,11 +1,7 @@
 
 import { Project, LogEntry } from './types';
 
-export const MOCK_ACCESS_LOGS: LogEntry[] = [
-  { id: 1, timestamp: '2025-10-01 08:30:00', username: 'admin', role: 'admin', status: 'Success' },
-  { id: 2, timestamp: '2025-10-01 09:15:00', username: 'ชัชตะวัน', role: 'user', status: 'Success' },
-  { id: 3, timestamp: '2025-10-02 10:00:00', username: 'ภราดร', role: 'user', status: 'Success' },
-];
+export const MOCK_ACCESS_LOGS: LogEntry[] = [];
 
 export const MOCK_PROJECTS: Project[] = [
   // --- PJ1 Series: งบดำเนินงาน / บริหารงานทั่วไป ---

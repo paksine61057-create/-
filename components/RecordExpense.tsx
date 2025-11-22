@@ -6,9 +6,10 @@ import { Save, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface RecordExpenseProps {
     projects: Project[];
+    onRecord: (projectId: number, amount: number) => void;
 }
 
-const RecordExpense: React.FC<RecordExpenseProps> = ({ projects }) => {
+const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     projectId: '',
@@ -25,18 +26,28 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate API call
-    setTimeout(() => {
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
-      setFormData({
-        projectId: '',
-        item: '',
-        date: new Date().toISOString().split('T')[0],
-        amount: '',
-        note: ''
-      });
-    }, 800);
+    
+    const amountNum = parseFloat(formData.amount);
+    const projectIdNum = parseInt(formData.projectId);
+
+    if (!isNaN(amountNum) && !isNaN(projectIdNum) && projectIdNum > 0) {
+        // Update the global state
+        onRecord(projectIdNum, amountNum);
+
+        // Show success message and reset form
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 3000);
+        
+        setFormData({
+            projectId: '',
+            item: '',
+            date: new Date().toISOString().split('T')[0],
+            amount: '',
+            note: ''
+        });
+    } else {
+        alert("กรุณาตรวจสอบข้อมูลโครงการและจำนวนเงิน");
+    }
   };
 
   return (
@@ -52,7 +63,7 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects }) => {
         {submitted && (
           <div className="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-center">
             <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
-            บันทึกข้อมูลสำเร็จ!
+            บันทึกข้อมูลและอัปเดตยอดงบประมาณสำเร็จ!
           </div>
         )}
 
@@ -150,7 +161,7 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects }) => {
       <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
         <AlertCircle className="text-blue-500 flex-shrink-0 mt-0.5" size={20} />
         <p className="text-sm text-blue-700">
-          <strong>ข้อแนะนำ:</strong> กรุณาตรวจสอบยอดเงินและหมวดเงินให้ถูกต้องก่อนบันทึก หากมีใบเสร็จรับเงิน สามารถแนบไฟล์ได้ในหน้า "เอกสารประกอบ" (อยู่ระหว่างพัฒนา)
+          <strong>ข้อแนะนำ:</strong> ระบบจะทำการคำนวณและหักลบงบประมาณคงเหลือของโครงการที่เลือกโดยอัตโนมัติทันทีที่บันทึก
         </p>
       </div>
     </div>
