@@ -162,12 +162,18 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, username, userRole }) =>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="การเบิกจ่ายรายเดือน (ตัวอย่าง)">
+        <Card title="การเบิกจ่ายรายเดือน">
             <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={CHART_DATA_MONTHLY}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                        <XAxis 
+                            dataKey="name" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            interval={0} 
+                            tick={{ fontSize: 12 }}
+                        />
                         <YAxis axisLine={false} tickLine={false} />
                         <Tooltip 
                             cursor={{fill: '#f3f4f6'}} 
