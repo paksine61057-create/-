@@ -27,8 +27,9 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const amountNum = parseFloat(formData.amount);
-    const projectIdNum = parseInt(formData.projectId);
+    // Parse as Integer (Base 10) to ensure no decimals
+    const amountNum = parseInt(formData.amount, 10);
+    const projectIdNum = parseInt(formData.projectId, 10);
 
     if (!isNaN(amountNum) && !isNaN(projectIdNum) && projectIdNum > 0) {
         // Update the global state
@@ -125,12 +126,13 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                   value={formData.amount}
                   onChange={handleChange}
                   required
-                  placeholder="0.00"
+                  placeholder="0"
                   min="0"
-                  step="0.01"
+                  step="1" 
                   className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all"
                 />
               </div>
+              <p className="text-xs text-gray-400 mt-1">* กรอกเฉพาะตัวเลขจำนวนเต็ม (ไม่มีจุดทศนิยม)</p>
             </div>
           </div>
 

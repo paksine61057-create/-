@@ -68,9 +68,9 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Parse numbers safely
-    const budgetNum = parseFloat(formData.budget) || 0;
-    const spentNum = parseFloat(formData.spent) || 0;
+    // Parse as Integers (Base 10) - No decimals
+    const budgetNum = parseInt(formData.budget, 10) || 0;
+    const spentNum = parseInt(formData.spent, 10) || 0;
 
     const finalData = {
         name: formData.name,
@@ -301,9 +301,9 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                                         onChange={handleChange}
                                         required
                                         min="0"
-                                        step="0.01"
+                                        step="1"
                                         className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm font-mono text-gray-800" 
-                                        placeholder="0.00" 
+                                        placeholder="0" 
                                     />
                                     <span className="absolute right-4 top-3 text-gray-400 text-sm">THB</span>
                                 </div>
@@ -317,13 +317,13 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                                         value={formData.spent}
                                         onChange={handleChange}
                                         min="0"
-                                        step="0.01"
+                                        step="1"
                                         className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 outline-none shadow-sm font-mono text-red-600" 
-                                        placeholder="0.00" 
+                                        placeholder="0" 
                                     />
                                     <span className="absolute right-4 top-3 text-gray-400 text-sm">THB</span>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">* ระบุยอดใช้จ่ายสะสมเพื่อปรับปรุงข้อมูล</p>
+                                <p className="text-xs text-gray-500 mt-1">* ระบุยอดใช้จ่ายสะสม (ตัวเลขจำนวนเต็ม)</p>
                             </div>
                         </div>
                     </div>
@@ -383,4 +383,3 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
 };
 
 export default ProjectManager;
-    
