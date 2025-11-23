@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Page, THEME_GRADIENT, Project, LogEntry } from './types';
 import { MOCK_PROJECTS, MOCK_ACCESS_LOGS } from './constants';
 import Home from './components/Home';
@@ -10,6 +10,7 @@ import ReportExport from './components/ReportExport';
 import AccessLogs from './components/AccessLogs';
 import Login from './components/Login';
 import { LayoutDashboard, PlusCircle, PieChart, FolderOpen, FileText, LogOut, Clock, Bell } from 'lucide-react';
+import { api } from './services/api';
 
 const LOGO_URL = "https://img2.pic.in.th/pic/23847230_1753798167972527_6171827179803949950_o.md.png";
 
@@ -21,6 +22,35 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [accessLogs, setAccessLogs] = useState<LogEntry[]>(MOCK_ACCESS_LOGS);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch Data from Google Sheets when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const [pData, lData] = await Promise.all([
+            api.getProjects(),
+            api.getLogs()
+          ]);
+          
+          // Only update if data is received (otherwise keep mock or empty)
+          if (pData && pData.length > 0) {
+            setProjects(pData);
+          }
+          if (lData && lData.length > 0) {
+            setAccessLogs(lData);
+          }
+        } catch (error) {
+          console.error("Failed to fetch data from Google Sheets", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = (role: 'admin' | 'user', name: string) => {
     setIsAuthenticated(true);
@@ -30,13 +60,16 @@ const App: React.FC = () => {
 
   const handleRecordLog = (username: string, role: 'admin' | 'user' | 'unknown', status: 'Success' | 'Failed') => {
       const newLog: LogEntry = {
-          id: accessLogs.length + 1,
+          id: Date.now(), // Use timestamp as temporary ID
           timestamp: new Date().toISOString(),
           username,
           role,
           status
       };
+      // Optimistic UI Update
       setAccessLogs(prev => [newLog, ...prev]);
+      // Send to API
+      api.recordLog(newLog);
   };
 
   const handleLogout = () => {
@@ -66,20 +99,30 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const handleUpdateProject = (updatedProject: Project) => {
+  const handleUpdateProject = async (updatedProject: Project) => {
+    // Optimistic Update
     setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    // API Call
+    await api.updateProject(updatedProject);
   };
   
-  const handleAddProject = (newProject: Project) => {
+  const handleAddProject = async (newProject: Project) => {
+    // Optimistic Update
     setProjects(prev => [...prev, newProject]);
+    // API Call
+    await api.addProject(newProject);
   };
 
-  const handleDeleteProject = (id: number) => {
+  const handleDeleteProject = async (id: number) => {
+    // Optimistic Update
     setProjects(prev => prev.filter(p => p.id !== id));
+    // API Call
+    await api.deleteProject(id);
   };
 
-  // New function to handle recording expenses and updating project state
-  const handleRecordExpense = (projectId: number, amount: number) => {
+  // Handle recording expenses and updating project state
+  const handleRecordExpense = async (projectId: number, amount: number) => {
+    // Optimistic Update
     setProjects(prev => prev.map(p => {
       if (p.id === projectId) {
         return {
@@ -90,6 +133,8 @@ const App: React.FC = () => {
       }
       return p;
     }));
+    // API Call
+    await api.recordExpense(projectId, amount);
   };
 
   const getPageTitle = () => {
@@ -98,6 +143,17 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-500 font-medium">กำลังเชื่อมต่อฐานข้อมูล...</p>
+          </div>
+        </div>
+      );
+    }
+
     switch (currentPage) {
       case Page.HOME: 
         return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
