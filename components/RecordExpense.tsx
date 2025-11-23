@@ -2,15 +2,16 @@
 import React, { useState } from 'react';
 import { Card } from './ui/Card';
 import { THEME_GRADIENT, Project } from '../types';
-import { Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface RecordExpenseProps {
     projects: Project[];
-    onRecord: (projectId: number, amount: number) => void;
+    onRecord: (projectId: number, amount: number) => Promise<boolean>;
 }
 
 const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => {
   const [submitted, setSubmitted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     projectId: '',
     item: '',
@@ -24,28 +25,33 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Parse as Integer (Base 10) to ensure no decimals
     const amountNum = parseInt(formData.amount, 10);
     const projectIdNum = parseInt(formData.projectId, 10);
 
     if (!isNaN(amountNum) && !isNaN(projectIdNum) && projectIdNum > 0) {
-        // Update the global state
-        onRecord(projectIdNum, amountNum);
+        setIsSaving(true);
+        // Update the global state and wait for API
+        const success = await onRecord(projectIdNum, amountNum);
+        setIsSaving(false);
 
-        // Show success message and reset form
-        setSubmitted(true);
-        setTimeout(() => setSubmitted(false), 3000);
-        
-        setFormData({
-            projectId: '',
-            item: '',
-            date: new Date().toISOString().split('T')[0],
-            amount: '',
-            note: ''
-        });
+        if (success) {
+            // Show success message and reset form
+            setSubmitted(true);
+            setTimeout(() => setSubmitted(false), 3000);
+            
+            setFormData({
+                projectId: '',
+                item: '',
+                date: new Date().toISOString().split('T')[0],
+                amount: '',
+                note: ''
+            });
+        } else {
+            alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบชื่อคอลัมน์ใน Google Sheet (id, budget, spent, status) หรือการเชื่อมต่ออินเทอร์เน็ต");
+        }
     } else {
         alert("กรุณาตรวจสอบข้อมูลโครงการและจำนวนเงิน");
     }
@@ -78,7 +84,8 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                 value={formData.projectId}
                 onChange={handleChange}
                 required
-                className="block w-full pl-4 pr-10 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all"
+                disabled={isSaving}
+                className="block w-full pl-4 pr-10 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all disabled:bg-gray-100"
               >
                 <option value="">-- กรุณาเลือกโครงการ --</option>
                 {projects.filter(p => p.status !== 'Closed').map(p => (
@@ -97,8 +104,9 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
               value={formData.item}
               onChange={handleChange}
               required
+              disabled={isSaving}
               placeholder="เช่น ค่าวัสดุสำนักงาน, ค่าวิทยากร"
-              className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all"
+              className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all disabled:bg-gray-100"
             />
           </div>
 
@@ -112,7 +120,8 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                 value={formData.date}
                 onChange={handleChange}
                 required
-                className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all"
+                disabled={isSaving}
+                className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all disabled:bg-gray-100"
               />
             </div>
 
@@ -126,10 +135,11 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                   value={formData.amount}
                   onChange={handleChange}
                   required
+                  disabled={isSaving}
                   placeholder="0"
                   min="0"
                   step="1" 
-                  className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all"
+                  className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all disabled:bg-gray-100"
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1">* กรอกเฉพาะตัวเลขจำนวนเต็ม (ไม่มีจุดทศนิยม)</p>
@@ -144,7 +154,8 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
               value={formData.note}
               onChange={handleChange}
               rows={3}
-              className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all"
+              disabled={isSaving}
+              className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all disabled:bg-gray-100"
             />
           </div>
 
@@ -152,9 +163,15 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
           <div className="pt-4">
             <button
               type="submit"
-              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-2xl shadow-md text-lg font-medium text-white ${THEME_GRADIENT} hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all transform hover:scale-[1.02]`}
+              disabled={isSaving}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-2xl shadow-md text-lg font-medium text-white ${THEME_GRADIENT} hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              บันทึกข้อมูล
+              {isSaving ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={20} />
+                    กำลังบันทึก...
+                  </>
+              ) : 'บันทึกข้อมูล'}
             </button>
           </div>
         </form>

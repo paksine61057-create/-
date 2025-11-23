@@ -81,10 +81,11 @@ export const api = {
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ action: 'recordExpense', projectId, amount }),
       });
-      const text = await res.text();
-      console.log("Expense recorded:", text);
+      const data = await res.json();
+      return data; // Return { status: 'success'/'error', ... }
     } catch (e) {
       console.error("Error recording expense:", e);
+      return { status: 'error', message: 'Network error' };
     }
   },
   

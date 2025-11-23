@@ -100,41 +100,43 @@ const App: React.FC = () => {
   };
 
   const handleUpdateProject = async (updatedProject: Project) => {
-    // Optimistic Update
     setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-    // API Call
     await api.updateProject(updatedProject);
   };
   
   const handleAddProject = async (newProject: Project) => {
-    // Optimistic Update
     setProjects(prev => [...prev, newProject]);
-    // API Call
     await api.addProject(newProject);
   };
 
   const handleDeleteProject = async (id: number) => {
-    // Optimistic Update
     setProjects(prev => prev.filter(p => p.id !== id));
-    // API Call
     await api.deleteProject(id);
   };
 
-  // Handle recording expenses and updating project state
-  const handleRecordExpense = async (projectId: number, amount: number) => {
-    // Optimistic Update
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          spent: p.spent + amount,
-          status: (p.spent + amount) > p.budget ? 'Warning' : p.status
-        };
-      }
-      return p;
-    }));
-    // API Call
-    await api.recordExpense(projectId, amount);
+  // Handle recording expenses with verification
+  const handleRecordExpense = async (projectId: number, amount: number): Promise<boolean> => {
+    // Call API First to verify
+    const result = await api.recordExpense(projectId, amount);
+    
+    if (result && result.status === 'success') {
+        // If success, update UI
+        setProjects(prev => prev.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              spent: p.spent + amount,
+              status: (p.spent + amount) > p.budget ? 'Warning' : p.status
+            };
+          }
+          return p;
+        }));
+        return true;
+    } else {
+        // Return failure
+        console.error("Record expense failed:", result);
+        return false;
+    }
   };
 
   const getPageTitle = () => {
