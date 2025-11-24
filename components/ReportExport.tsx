@@ -10,6 +10,8 @@ interface ReportExportProps {
     projects: Project[];
 }
 
+const LOGO_URL = "https://img5.pic.in.th/file/secure-sv1/5bc66fd0-c76e-41c4-87ed-46d11f4a36fa.png";
+
 const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
   const [selectedProject, setSelectedProject] = useState('all');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -189,6 +191,7 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
                         >
                             {/* Header */}
                             <div className="text-center mb-6 pb-2 border-b border-gray-800">
+                                <img src={LOGO_URL} alt="School Logo" className="w-16 h-16 object-contain mx-auto mb-2" />
                                 <h1 className="font-bold text-gray-900" style={{ fontSize: '14px' }}>รายงานสรุปการเบิกจ่ายงบประมาณ</h1>
                                 <h2 className="font-medium text-gray-700" style={{ fontSize: '12px' }}>โรงเรียนประจักษ์ศิลปาคม</h2>
                                 <p className="text-gray-500 mt-1">ประจำปีงบประมาณ 2569</p>
