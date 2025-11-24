@@ -16,7 +16,7 @@ const AUTHORIZED_USERS = [
   "ปภัสพ์มณ", "ตรีนัทธ์ธนา", "วชิรวิทย์", "ศิรินภา"
 ];
 
-const LOGO_URL = "https://img2.pic.in.th/pic/23847230_1753798167972527_6171827179803949950_o.md.png";
+const LOGO_URL = "https://img5.pic.in.th/file/secure-sv1/5bc66fd0-c76e-41c4-87ed-46d11f4a36fa.png";
 
 const Login: React.FC<LoginProps> = ({ onLogin, onRecordLog }) => {
   const [username, setUsername] = useState('');
@@ -60,9 +60,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onRecordLog }) => {
         {/* Header */}
         <div className={`${THEME_GRADIENT} p-8 text-center relative overflow-hidden`}>
           <div className="relative z-10">
-            {/* Updated Logo Container: Removed bg-white circle styling */}
-            <div className="w-32 h-32 flex items-center justify-center mx-auto mb-4">
-               <img src={LOGO_URL} alt="School Logo" className="w-full h-full object-contain drop-shadow-md" />
+            {/* Updated Logo Container: Added bg-white circle styling for better visibility */}
+            <div className="w-32 h-32 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-4 p-3">
+               <img src={LOGO_URL} alt="School Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-white">Prajak Budget 2569</h1>
             <p className="text-purple-100 text-sm mt-1">ระบบติดตามการใช้งบประมาณโรงเรียน</p>

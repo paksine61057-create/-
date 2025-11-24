@@ -12,7 +12,7 @@ import Login from './components/Login';
 import { LayoutDashboard, PlusCircle, PieChart, FolderOpen, FileText, LogOut, Clock, Bell } from 'lucide-react';
 import { api } from './services/api';
 
-const LOGO_URL = "https://img2.pic.in.th/pic/23847230_1753798167972527_6171827179803949950_o.md.png";
+const LOGO_URL = "https://img5.pic.in.th/file/secure-sv1/5bc66fd0-c76e-41c4-87ed-46d11f4a36fa.png";
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -35,10 +35,41 @@ const App: React.FC = () => {
             api.getLogs()
           ]);
           
-          // Only update if data is received (otherwise keep mock or empty)
+          // --- INTELLIGENT MERGE LOGIC ---
+          // ถ้าข้อมูลจาก Sheet (pData) มีอยู่ ให้เอามาใช้
+          // แต่ถ้าฟิลด์ไหนเป็น 0 หรือว่าง (เช่น budget หาย) ให้ดึงจาก MOCK_PROJECTS มาสำรองไว้
           if (pData && pData.length > 0) {
-            setProjects(pData);
+            const mergedProjects = pData.map((apiProject) => {
+                // หาคู่ของมันใน Mock Data
+                const mockProject = MOCK_PROJECTS.find(m => m.id === apiProject.id);
+                
+                if (mockProject) {
+                    return {
+                        ...apiProject,
+                        // ถ้าชื่อใน Sheet ว่าง ให้ใช้ชื่อเดิม
+                        name: apiProject.name || mockProject.name,
+                        // ถ้างบประมาณใน Sheet เป็น 0 (ลืมใส่) ให้ใช้งบเดิมจาก Mock
+                        budget: apiProject.budget > 0 ? apiProject.budget : mockProject.budget,
+                        // ฟิลด์อื่นๆ ก็เช่นกัน
+                        group: apiProject.group || mockProject.group,
+                        category: apiProject.category || mockProject.category,
+                        // ค่าใช้จ่าย (spent) ต้องยึดจาก Sheet เป็นหลักเสมอ (เพราะมีการอัปเดต)
+                        spent: apiProject.spent
+                    };
+                }
+                // ถ้าเป็นโครงการใหม่ที่ไม่มีใน Mock ก็ใช้ค่าจาก Sheet เลย
+                return apiProject;
+            });
+            
+            // ถ้าใน Sheet มีโครงการน้อยกว่า Mock (เช่น เพิ่งสร้าง Sheet ใหม่มีแค่ 1 แถว)
+            // เราอาจจะอยากเติมโครงการที่เหลือจาก Mock เข้าไปแสดงด้วย (Optional)
+            // ในที่นี้เราจะใช้ mergedProjects เป็นหลัก
+            setProjects(mergedProjects);
+          } else {
+             // ถ้า Sheet ว่างเปล่าเลย ให้ใช้ Mock ทั้งหมด
+             setProjects(MOCK_PROJECTS);
           }
+
           if (lData && lData.length > 0) {
             setAccessLogs(lData);
           }
@@ -60,15 +91,13 @@ const App: React.FC = () => {
 
   const handleRecordLog = (username: string, role: 'admin' | 'user' | 'unknown', status: 'Success' | 'Failed') => {
       const newLog: LogEntry = {
-          id: Date.now(), // Use timestamp as temporary ID
+          id: Date.now(), 
           timestamp: new Date().toISOString(),
           username,
           role,
           status
       };
-      // Optimistic UI Update
       setAccessLogs(prev => [newLog, ...prev]);
-      // Send to API
       api.recordLog(newLog);
   };
 
@@ -89,7 +118,6 @@ const App: React.FC = () => {
     { page: Page.ACCESS_LOGS, label: 'ประวัติการใช้งาน', icon: <Clock size={20} /> },
   ];
 
-  // Filter navigation items based on role
   const navItems = userRole === 'user' 
     ? allNavItems.filter(item => [Page.HOME, Page.DASHBOARD].includes(item.page))
     : allNavItems;
@@ -133,7 +161,6 @@ const App: React.FC = () => {
         }));
         return true;
     } else {
-        // Return failure
         console.error("Record expense failed:", result);
         return false;
     }
