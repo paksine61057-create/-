@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Page, THEME_GRADIENT, Project, LogEntry } from './types';
 import { MOCK_PROJECTS, MOCK_ACCESS_LOGS } from './constants';
@@ -36,37 +35,24 @@ const App: React.FC = () => {
           ]);
           
           // --- INTELLIGENT MERGE LOGIC ---
-          // ถ้าข้อมูลจาก Sheet (pData) มีอยู่ ให้เอามาใช้
-          // แต่ถ้าฟิลด์ไหนเป็น 0 หรือว่าง (เช่น budget หาย) ให้ดึงจาก MOCK_PROJECTS มาสำรองไว้
           if (pData && pData.length > 0) {
             const mergedProjects = pData.map((apiProject) => {
-                // หาคู่ของมันใน Mock Data
                 const mockProject = MOCK_PROJECTS.find(m => m.id === apiProject.id);
                 
                 if (mockProject) {
                     return {
                         ...apiProject,
-                        // ถ้าชื่อใน Sheet ว่าง ให้ใช้ชื่อเดิม
                         name: apiProject.name || mockProject.name,
-                        // ถ้างบประมาณใน Sheet เป็น 0 (ลืมใส่) ให้ใช้งบเดิมจาก Mock
                         budget: apiProject.budget > 0 ? apiProject.budget : mockProject.budget,
-                        // ฟิลด์อื่นๆ ก็เช่นกัน
                         group: apiProject.group || mockProject.group,
                         category: apiProject.category || mockProject.category,
-                        // ค่าใช้จ่าย (spent) ต้องยึดจาก Sheet เป็นหลักเสมอ (เพราะมีการอัปเดต)
                         spent: apiProject.spent
                     };
                 }
-                // ถ้าเป็นโครงการใหม่ที่ไม่มีใน Mock ก็ใช้ค่าจาก Sheet เลย
                 return apiProject;
             });
-            
-            // ถ้าใน Sheet มีโครงการน้อยกว่า Mock (เช่น เพิ่งสร้าง Sheet ใหม่มีแค่ 1 แถว)
-            // เราอาจจะอยากเติมโครงการที่เหลือจาก Mock เข้าไปแสดงด้วย (Optional)
-            // ในที่นี้เราจะใช้ mergedProjects เป็นหลัก
             setProjects(mergedProjects);
           } else {
-             // ถ้า Sheet ว่างเปล่าเลย ให้ใช้ Mock ทั้งหมด
              setProjects(MOCK_PROJECTS);
           }
 
@@ -142,13 +128,10 @@ const App: React.FC = () => {
     await api.deleteProject(id);
   };
 
-  // Handle recording expenses with verification
   const handleRecordExpense = async (projectId: number, amount: number): Promise<boolean> => {
-    // Call API First to verify
     const result = await api.recordExpense(projectId, amount);
     
     if (result && result.status === 'success') {
-        // If success, update UI
         setProjects(prev => prev.map(p => {
           if (p.id === projectId) {
             return {
@@ -218,11 +201,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden print:overflow-visible">
       
-      {/* SIDEBAR (Permanent Left Bar) */}
-      <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0">
-         {/* Sidebar Header / Logo */}
+      {/* SIDEBAR - Add print:hidden */}
+      <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0 print:hidden">
          <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100">
              <img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" />
              <div>
@@ -231,7 +213,6 @@ const App: React.FC = () => {
              </div>
          </div>
 
-         {/* Navigation */}
          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {navItems.map((item) => (
                 <button
@@ -249,7 +230,6 @@ const App: React.FC = () => {
             ))}
          </nav>
 
-         {/* Sidebar Footer */}
          <div className="p-4 border-t border-gray-100">
              <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
@@ -264,10 +244,10 @@ const App: React.FC = () => {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0 print:overflow-visible print:h-auto">
           
-          {/* TOP HEADER (Sticky) */}
-          <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
+          {/* TOP HEADER - Add print:hidden */}
+          <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10 print:hidden">
               <div>
                   <h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2>
                   <p className="text-sm text-gray-500 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p>
@@ -289,11 +269,10 @@ const App: React.FC = () => {
               </div>
           </header>
 
-          {/* SCROLLABLE CONTENT */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+          {/* SCROLLABLE CONTENT - Adjust for print */}
+          <main className="flex-1 overflow-y-auto p-4 lg:p-8 print:overflow-visible print:p-0">
               {renderContent()}
-              
-              <div className="h-8"></div> {/* Spacer */}
+              <div className="h-8 print:hidden"></div>
           </main>
 
       </div>
