@@ -4,7 +4,7 @@ import { Card } from './ui/Card';
 import { THEME_GRADIENT, Project } from '../types';
 import { FileText, Download, Calendar, Printer } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
 interface ReportExportProps {
     projects: Project[];
@@ -39,7 +39,9 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
             scale: 4, // Higher scale for better quality with small fonts
             useCORS: true,
             logging: false,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            windowWidth: reportRef.current.scrollWidth,
+            windowHeight: reportRef.current.scrollHeight
         });
 
         const imgData = canvas.toDataURL('image/png');
