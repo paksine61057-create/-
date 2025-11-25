@@ -1,7 +1,8 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from './ui/Card';
 import { THEME_GRADIENT, Project } from '../types';
-import { FileText, Printer, Calendar, Filter } from 'lucide-react';
+import { FileText, Printer, Calendar } from 'lucide-react';
 
 interface ReportExportProps {
     projects: Project[];
@@ -13,25 +14,31 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
   const [reportType, setReportType] = useState('summary'); // summary | details
   const [selectedGroup, setSelectedGroup] = useState('all');
   
-  // Filter Logic
+  // Filter Logic: First filter by Group if selected
   const getFilteredProjects = () => {
       let filtered = projects;
-      
-      // Filter by Group
       if (selectedGroup !== 'all') {
           filtered = filtered.filter(p => p.group === selectedGroup);
       }
-      
-      // For "Summary" report, we usually show active projects or those with budget
-      // For "Details", maybe only those with spending
       return filtered;
   };
 
-  const reportData = getFilteredProjects();
+  const allFilteredData = getFilteredProjects();
 
-  // Overview Stats
-  const totalBudget = reportData.reduce((sum, p) => sum + p.budget, 0);
-  const totalSpent = reportData.reduce((sum, p) => sum + p.spent, 0);
+  // Categorize by ID Range
+  const subsidyProjects = allFilteredData.filter(p => p.id >= 100 && p.id < 200); // 101-158
+  const developmentProjects = allFilteredData.filter(p => p.id >= 200 && p.id < 300); // 201-216
+  const centralProjects = allFilteredData.filter(p => p.id >= 300); // 301
+
+  const budgetCategories = [
+      { title: "1. งบอุดหนุนรายหัว (รหัส 101-199)", data: subsidyProjects },
+      { title: "2. งบพัฒนาผู้เรียน (รหัส 201-299)", data: developmentProjects },
+      { title: "3. งบกลาง (รหัส 301+)", data: centralProjects }
+  ];
+
+  // Grand Totals
+  const totalBudget = allFilteredData.reduce((sum, p) => sum + p.budget, 0);
+  const totalSpent = allFilteredData.reduce((sum, p) => sum + p.spent, 0);
   const totalRemaining = totalBudget - totalSpent;
 
   // Native Browser Print
@@ -110,24 +117,20 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
                         <Printer size={16} className="mr-2" /> 
                         พิมพ์รายงาน / บันทึก PDF
                     </button>
-                    <p className="text-[10px] text-gray-400 mt-2">Tip: ในหน้าต่างพิมพ์ เลือก "Save as PDF" ได้</p>
+                    <p className="text-[10px] text-gray-400 mt-2">Tip: กด Ctrl+P แล้วเลือก "Save as PDF"</p>
                 </div>
             </div>
 
             {/* --- RIGHT PANEL: REPORT PREVIEW (Visible on Print via ID) --- */}
             <div className="lg:col-span-8">
-                {/* Wrapper Card (Hidden visual styles when printing) */}
+                {/* Wrapper Card */}
                 <Card className="flex flex-col relative bg-gray-100 min-h-[800px] print:shadow-none print:border-none print:bg-white print:p-0 print:min-h-0">
                     
                     <div className="mb-2 text-center text-xs text-gray-500 print:hidden">
                         ตัวอย่างเอกสาร (A4) - สิ่งที่จะถูกพิมพ์
                     </div>
 
-                    {/* 
-                        PRINTABLE AREA 
-                        This div corresponds to the A4 page.
-                        The global CSS in index.html handles the #printable-area visibility.
-                    */}
+                    {/* PRINTABLE AREA */}
                     <div className="overflow-auto flex justify-center p-4 bg-gray-200 rounded-lg print:p-0 print:bg-white print:overflow-visible">
                         <div 
                             id="printable-area"
@@ -135,8 +138,8 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
                             style={{ 
                                 width: '210mm', 
                                 minHeight: '297mm',
-                                padding: '20mm', // Standard margin
-                                fontSize: '14px', // Base font size for readability
+                                padding: '20mm', // Standard A4 margin
+                                fontSize: '14px',
                                 lineHeight: '1.5',
                                 fontFamily: "'Sarabun', sans-serif",
                                 position: 'relative'
@@ -151,28 +154,28 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
                                         <h1 className="font-bold text-xl">บันทึกข้อความ</h1>
                                         <div className="flex justify-between items-end w-full mt-4 border-b border-dotted border-black pb-1">
                                             <div className="text-left w-3/4">
-                                                <div className="flex">
-                                                    <span className="font-bold w-24">ส่วนราชการ</span>
-                                                    <span>โรงเรียนประจักษ์ศิลปาคม อำเภอเมือง จังหวัดอุดรธานี</span>
+                                                <div className="flex items-center">
+                                                    <span className="font-bold w-24 flex-shrink-0">ส่วนราชการ</span>
+                                                    <span className="whitespace-nowrap">โรงเรียนประจักษ์ศิลปาคม จังหวัดอุดรธานี</span>
                                                 </div>
-                                                <div className="flex mt-1">
-                                                    <span className="font-bold w-24">ที่</span>
+                                                <div className="flex mt-1 items-center">
+                                                    <span className="font-bold w-24 flex-shrink-0">ที่</span>
                                                     <span>.........................................................</span>
                                                 </div>
                                             </div>
-                                            <div className="text-right w-1/4">
+                                            <div className="text-right w-1/4 whitespace-nowrap">
                                                 <span className="font-bold mr-2">วันที่</span>
                                                 <span>{new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric'})}</span>
                                             </div>
                                         </div>
-                                        <div className="flex mt-2">
-                                            <span className="font-bold w-24">เรื่อง</span>
-                                            <span className="font-bold">รายงานสรุปผลการเบิกจ่ายงบประมาณ ประจำปี 2569</span>
+                                        <div className="flex mt-2 items-center">
+                                            <span className="font-bold w-24 flex-shrink-0">เรื่อง</span>
+                                            <span className="font-bold">รายงานสรุปผลการเบิกจ่ายงบประมาณ ประจำปีงบประมาณ 2569</span>
                                         </div>
                                         <div className="border-b border-black mt-2 mb-6"></div>
                                     </>
                                 ) : (
-                                    /* Table Header Style */
+                                    /* Table Report Header */
                                     <div className="text-center mb-6">
                                         <h1 className="font-bold text-lg">รายงานรายละเอียดโครงการและงบประมาณ</h1>
                                         <h2 className="font-bold text-md">โรงเรียนประจักษ์ศิลปาคม ปีงบประมาณ 2569</h2>
@@ -189,68 +192,94 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
                                             เรียน ผู้อำนวยการโรงเรียนประจักษ์ศิลปาคม
                                         </p>
                                         <p className="indent-8 mb-4">
-                                            ตามที่ได้รับจัดสรรงบประมาณ ประจำปีการศึกษา 2569 เพื่อใช้ในการบริหารจัดการและดำเนินโครงการต่างๆ 
-                                            ภายในโรงเรียนประจักษ์ศิลปาคม นั้น บัดนี้ งานนโยบายและแผน ขอรายงานสรุปผลการเบิกจ่ายงบประมาณ {selectedGroup !== 'all' ? `(เฉพาะ${selectedGroup})` : ''} ดังรายการต่อไปนี้
+                                            ตามที่ได้รับจัดสรรงบประมาณ ประจำปีงบประมาณ 2569 เพื่อใช้ในการบริหารจัดการและดำเนินโครงการต่างๆ 
+                                            ภายในโรงเรียนประจักษ์ศิลปาคม นั้น บัดนี้ งานนโยบายและแผน ขอรายงานสรุปผลการเบิกจ่ายงบประมาณ {selectedGroup !== 'all' ? `(เฉพาะ${selectedGroup})` : ''} โดยจำแนกตามประเภทงบประมาณ ดังรายการต่อไปนี้
                                         </p>
                                     </>
                                 )}
 
                                 {/* SUMMARY BOX */}
-                                <div className="border border-black mb-6">
-                                    <div className="grid grid-cols-3 text-center bg-gray-100 border-b border-black font-bold">
-                                        <div className="py-2 border-r border-black">งบประมาณได้รับ</div>
-                                        <div className="py-2 border-r border-black">เบิกจ่ายแล้ว</div>
-                                        <div className="py-2">คงเหลือสุทธิ</div>
+                                {reportType === 'summary' && (
+                                    <div className="border border-black mb-6 break-inside-avoid">
+                                        <div className="grid grid-cols-3 text-center bg-gray-100 border-b border-black font-bold">
+                                            <div className="py-2 border-r border-black">งบประมาณได้รับ</div>
+                                            <div className="py-2 border-r border-black">เบิกจ่ายแล้ว</div>
+                                            <div className="py-2">คงเหลือสุทธิ</div>
+                                        </div>
+                                        <div className="grid grid-cols-3 text-center">
+                                            <div className="py-2 border-r border-black">{totalBudget.toLocaleString()} บาท</div>
+                                            <div className="py-2 border-r border-black">{totalSpent.toLocaleString()} บาท</div>
+                                            <div className="py-2 font-bold">{totalRemaining.toLocaleString()} บาท</div>
+                                        </div>
                                     </div>
-                                    <div className="grid grid-cols-3 text-center">
-                                        <div className="py-2 border-r border-black">{totalBudget.toLocaleString()} บาท</div>
-                                        <div className="py-2 border-r border-black">{totalSpent.toLocaleString()} บาท</div>
-                                        <div className="py-2 font-bold">{totalRemaining.toLocaleString()} บาท</div>
-                                    </div>
-                                </div>
+                                )}
 
-                                <p className="mb-2 font-bold">รายละเอียดแยกตามโครงการ:</p>
+                                <p className="mb-2 font-bold">รายละเอียดการเบิกจ่ายแยกตามประเภท:</p>
 
-                                {/* MAIN TABLE */}
-                                <table className="w-full border-collapse border border-black text-[12px]">
-                                    <thead>
-                                        <tr className="bg-gray-200 text-center">
-                                            <th className="border border-black py-2 px-1 w-10">ที่</th>
-                                            <th className="border border-black py-2 px-2">ชื่อโครงการ</th>
-                                            <th className="border border-black py-2 px-2 w-24">งบอนุมัติ</th>
-                                            <th className="border border-black py-2 px-2 w-24">เบิกจ่าย</th>
-                                            <th className="border border-black py-2 px-2 w-24">คงเหลือ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {reportData.length > 0 ? (
-                                            reportData.map((p, i) => (
-                                                <tr key={p.id}>
-                                                    <td className="border border-black py-1.5 px-1 text-center align-top">{i + 1}</td>
-                                                    <td className="border border-black py-1.5 px-2 align-top">
-                                                        {p.name}
-                                                        {reportType === 'table' && <div className="text-[10px] text-gray-500">{p.group}</div>}
-                                                    </td>
-                                                    <td className="border border-black py-1.5 px-2 text-right align-top">{p.budget.toLocaleString()}</td>
-                                                    <td className="border border-black py-1.5 px-2 text-right align-top">{p.spent.toLocaleString()}</td>
-                                                    <td className="border border-black py-1.5 px-2 text-right align-top font-bold">{(p.budget - p.spent).toLocaleString()}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={5} className="border border-black py-4 text-center italic">ไม่มีข้อมูลโครงการ</td>
+                                {/* --- DYNAMIC TABLES FOR EACH CATEGORY --- */}
+                                {budgetCategories.map((category, index) => {
+                                    if (category.data.length === 0) return null;
+
+                                    const subBudget = category.data.reduce((s, p) => s + p.budget, 0);
+                                    const subSpent = category.data.reduce((s, p) => s + p.spent, 0);
+                                    const subRemaining = subBudget - subSpent;
+
+                                    return (
+                                        <div key={index} className="mb-6 break-inside-avoid">
+                                            <p className="font-bold text-sm mb-2">{category.title}</p>
+                                            <table className="w-full border-collapse border border-black text-[12px]">
+                                                <thead>
+                                                    <tr className="bg-gray-200 text-center">
+                                                        <th className="border border-black py-2 px-1 w-10">ที่</th>
+                                                        <th className="border border-black py-2 px-2">ชื่อโครงการ</th>
+                                                        <th className="border border-black py-2 px-2 w-24">งบอนุมัติ</th>
+                                                        <th className="border border-black py-2 px-2 w-24">เบิกจ่าย</th>
+                                                        <th className="border border-black py-2 px-2 w-24">คงเหลือ</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {category.data.map((p, i) => (
+                                                        <tr key={p.id}>
+                                                            <td className="border border-black py-1.5 px-1 text-center align-top">{i + 1}</td>
+                                                            <td className="border border-black py-1.5 px-2 align-top">
+                                                                {p.name}
+                                                                {reportType === 'table' && <div className="text-[10px] text-gray-500">{p.group}</div>}
+                                                            </td>
+                                                            <td className="border border-black py-1.5 px-2 text-right align-top">{p.budget.toLocaleString()}</td>
+                                                            <td className="border border-black py-1.5 px-2 text-right align-top">{p.spent.toLocaleString()}</td>
+                                                            <td className="border border-black py-1.5 px-2 text-right align-top font-bold">{(p.budget - p.spent).toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {/* Subtotal Row */}
+                                                    <tr className="bg-gray-100 font-bold">
+                                                        <td colSpan={2} className="border border-black py-2 px-2 text-right">รวม (รายการที่ {index + 1})</td>
+                                                        <td className="border border-black py-2 px-2 text-right">{subBudget.toLocaleString()}</td>
+                                                        <td className="border border-black py-2 px-2 text-right">{subSpent.toLocaleString()}</td>
+                                                        <td className="border border-black py-2 px-2 text-right">{subRemaining.toLocaleString()}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    );
+                                })}
+
+                                {allFilteredData.length === 0 && (
+                                    <div className="border border-black p-4 text-center italic mb-4">ไม่มีข้อมูลโครงการ</div>
+                                )}
+
+                                {/* GRAND TOTAL TABLE */}
+                                <div className="break-inside-avoid mt-4">
+                                    <table className="w-full border-collapse border border-black text-[12px]">
+                                        <tbody>
+                                            <tr className="bg-gray-200 font-bold">
+                                                <td className="border border-black py-2 px-2 text-center w-[50%]">รวมทั้งสิ้น (ทุกประเภท)</td>
+                                                <td className="border border-black py-2 px-2 text-right w-24">{totalBudget.toLocaleString()}</td>
+                                                <td className="border border-black py-2 px-2 text-right w-24">{totalSpent.toLocaleString()}</td>
+                                                <td className="border border-black py-2 px-2 text-right w-24">{totalRemaining.toLocaleString()}</td>
                                             </tr>
-                                        )}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="bg-gray-100 font-bold">
-                                            <td colSpan={2} className="border border-black py-2 px-2 text-center">รวมทั้งสิ้น</td>
-                                            <td className="border border-black py-2 px-2 text-right">{totalBudget.toLocaleString()}</td>
-                                            <td className="border border-black py-2 px-2 text-right">{totalSpent.toLocaleString()}</td>
-                                            <td className="border border-black py-2 px-2 text-right">{totalRemaining.toLocaleString()}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                </div>
 
                                 {reportType === 'summary' && (
                                     <>
@@ -258,15 +287,15 @@ const ReportExport: React.FC<ReportExportProps> = ({ projects }) => {
 
                                         {/* SIGNATURES */}
                                         <div className="flex justify-between mt-12 px-8 break-inside-avoid">
-                                            <div className="text-center">
-                                                <p className="mb-4">ลงชื่อ ....................................................... ผู้รายงาน</p>
-                                                <p>(นางสาวปภัสพ์มณ ทองอาสา)</p>
-                                                <p>หัวหน้างานนโยบายและแผน</p>
+                                            <div className="text-center w-[45%]">
+                                                <p className="mb-4 whitespace-nowrap">ลงชื่อ ....................................................... ผู้รายงาน</p>
+                                                <p className="whitespace-nowrap">(นางสาวปภัสพ์มณ ทองอาสา)</p>
+                                                <p className="whitespace-nowrap">หัวหน้างานนโยบายและแผน</p>
                                             </div>
-                                            <div className="text-center">
-                                                <p className="mb-4">ลงชื่อ ....................................................... ผู้อนุมัติ</p>
-                                                <p>(.......................................................)</p>
-                                                <p>ผู้อำนวยการโรงเรียนประจักษ์ศิลปาคม</p>
+                                            <div className="text-center w-[45%]">
+                                                <p className="mb-4 whitespace-nowrap">ลงชื่อ ....................................................... ทราบ</p>
+                                                <p className="whitespace-nowrap">(.......................................................)</p>
+                                                <p className="whitespace-nowrap">ผู้อำนวยการโรงเรียนประจักษ์ศิลปาคม</p>
                                             </div>
                                         </div>
                                     </>

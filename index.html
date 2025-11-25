@@ -29,7 +29,7 @@
 
         /* --- PRINT STYLES --- */
         @media print {
-            /* Hide everything by default that isn't explicitly marked to print */
+            /* Hide everything by default */
             body * {
                 visibility: hidden;
             }
@@ -59,31 +59,32 @@
                 box-shadow: none !important;
             }
 
-            /* Ensure table headers repeat on new pages if needed */
-            thead { display: table-header-group; }
+            /* Table Pagination Logic */
+            table { page-break-inside: auto; }
+            thead { display: table-header-group; } /* Repeats header on new page */
             tfoot { display: table-footer-group; }
-            tr { page-break-inside: avoid; }
-
+            tr { page-break-inside: avoid; page-break-after: auto; } /* Don't cut rows */
+            
             /* Hide Scrollbars during print */
             ::-webkit-scrollbar { display: none; }
             
             /* Set Page Size */
             @page {
                 size: A4;
-                margin: 10mm 15mm; /* Top/Bottom Left/Right */
+                margin: 15mm 15mm; /* Top/Bottom Left/Right */
             }
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0"
   }
 }
 </script>
