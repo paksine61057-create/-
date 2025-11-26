@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Page, THEME_GRADIENT, Project, LogEntry } from './types';
 import { MOCK_PROJECTS, MOCK_ACCESS_LOGS } from './constants';
@@ -8,7 +9,8 @@ import ProjectManager from './components/ProjectManager';
 import ReportExport from './components/ReportExport';
 import AccessLogs from './components/AccessLogs';
 import Login from './components/Login';
-import { LayoutDashboard, PlusCircle, PieChart, FolderOpen, FileText, LogOut, Clock, Bell } from 'lucide-react';
+import ChangePasswordModal from './components/ChangePasswordModal';
+import { LayoutDashboard, PlusCircle, PieChart, FolderOpen, FileText, LogOut, Clock, Bell, LockKeyhole } from 'lucide-react';
 import { api } from './services/api';
 
 const LOGO_URL = "https://img5.pic.in.th/file/secure-sv1/5bc66fd0-c76e-41c4-87ed-46d11f4a36fa.png";
@@ -17,11 +19,15 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
   const [currentUser, setCurrentUser] = useState('');
+  const [currentUsername, setCurrentUsername] = useState(''); // To store actual username for password change
 
   const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [accessLogs, setAccessLogs] = useState<LogEntry[]>(MOCK_ACCESS_LOGS);
   const [loading, setLoading] = useState(false);
+  
+  // Modal State
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // Fetch Data from Google Sheets when authenticated
   useEffect(() => {
@@ -69,10 +75,11 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated]);
 
-  const handleLogin = (role: 'admin' | 'user', name: string) => {
+  const handleLogin = (role: 'admin' | 'user', name: string, username: string) => {
     setIsAuthenticated(true);
     setUserRole(role);
     setCurrentUser(name);
+    setCurrentUsername(username);
   };
 
   const handleRecordLog = (username: string, role: 'admin' | 'user' | 'unknown', status: 'Success' | 'Failed') => {
@@ -91,6 +98,7 @@ const App: React.FC = () => {
     setIsAuthenticated(false);
     setUserRole(null);
     setCurrentUser('');
+    setCurrentUsername('');
     setCurrentPage(Page.HOME);
   };
 
@@ -203,7 +211,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden print:overflow-visible">
       
-      {/* SIDEBAR - Add print:hidden */}
+      {/* SIDEBAR */}
       <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0 print:hidden">
          <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100">
              <img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" />
@@ -231,22 +239,32 @@ const App: React.FC = () => {
          </nav>
 
          <div className="p-4 border-t border-gray-100">
-             <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                 <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
-                    {currentUser.charAt(0)}
+             <div className="bg-gray-50 rounded-xl p-4 flex flex-col gap-3">
+                 <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
+                        {currentUser.charAt(0)}
+                    </div>
+                    <div className="overflow-hidden">
+                        <p className="text-sm font-bold text-gray-700 truncate">{currentUser}</p>
+                        <p className="text-xs text-gray-500">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
+                    </div>
                  </div>
-                 <div className="overflow-hidden">
-                     <p className="text-sm font-bold text-gray-700 truncate">{currentUser}</p>
-                     <p className="text-xs text-gray-500">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
-                 </div>
+                 
+                 {/* Change Password Button */}
+                 <button 
+                    onClick={() => setIsChangePasswordOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
+                 >
+                    <LockKeyhole size={12} /> เปลี่ยนรหัสผ่าน
+                 </button>
              </div>
          </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0 print:overflow-visible print:h-auto">
           
-          {/* TOP HEADER - Add print:hidden */}
+          {/* HEADER */}
           <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10 print:hidden">
               <div>
                   <h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2>
@@ -269,13 +287,20 @@ const App: React.FC = () => {
               </div>
           </header>
 
-          {/* SCROLLABLE CONTENT - Adjust for print */}
+          {/* CONTENT */}
           <main className="flex-1 overflow-y-auto p-4 lg:p-8 print:overflow-visible print:p-0">
               {renderContent()}
               <div className="h-8 print:hidden"></div>
           </main>
 
       </div>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+        username={currentUsername}
+      />
 
     </div>
   );

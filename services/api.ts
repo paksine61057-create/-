@@ -5,13 +5,38 @@ import { Project, LogEntry } from '../types';
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWK7KbOYEDRfDCxepelHSeF4NzJwlDS1V2DVst4xclE7ekDcNcDNiufk4dwXjKIBl4JQ/exec";
 
 export const api = {
-  // ดึงข้อมูลโครงการทั้งหมด
+  // --- AUTH ---
+  login: async (username, password) => {
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: 'login', username, password }),
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: 'error', message: 'Connection failed' };
+    }
+  },
+
+  changePassword: async (username, oldPassword, newPassword) => {
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: 'changePassword', username, oldPassword, newPassword }),
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: 'error', message: 'Connection failed' };
+    }
+  },
+
+  // --- DATA ---
   getProjects: async (): Promise<Project[]> => {
     try {
-      console.log("Fetching projects...");
       const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getProjects`);
       const data = await response.json();
-      console.log("Projects fetched:", data);
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -19,7 +44,6 @@ export const api = {
     }
   },
   
-  // ดึงข้อมูลประวัติการใช้งาน
   getLogs: async (): Promise<LogEntry[]> => {
     try {
       const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getLogs`);
@@ -31,7 +55,7 @@ export const api = {
     }
   },
 
-  // เพิ่มโครงการใหม่
+  // --- ACTIONS ---
   addProject: async (project: Project) => {
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
@@ -39,13 +63,11 @@ export const api = {
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ action: 'addProject', payload: project }),
       });
-      console.log("Project added successfully");
     } catch (e) {
       console.error("Error adding project:", e);
     }
   },
 
-  // อัปเดตโครงการ (แก้ไข)
   updateProject: async (project: Project) => {
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
@@ -53,13 +75,11 @@ export const api = {
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ action: 'updateProject', payload: project }),
       });
-      console.log("Project updated successfully");
     } catch (e) {
       console.error("Error updating project:", e);
     }
   },
   
-  // ลบโครงการ
   deleteProject: async (id: number) => {
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
@@ -67,13 +87,11 @@ export const api = {
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ action: 'deleteProject', id: id }),
       });
-      console.log("Project deleted successfully");
     } catch (e) {
       console.error("Error deleting project:", e);
     }
   },
 
-  // บันทึกค่าใช้จ่าย (อัปเดตยอด spent)
   recordExpense: async (projectId: number, amount: number) => {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL, {
@@ -81,15 +99,13 @@ export const api = {
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({ action: 'recordExpense', projectId, amount }),
       });
-      const data = await res.json();
-      return data; // Return { status: 'success'/'error', ... }
+      return await res.json();
     } catch (e) {
       console.error("Error recording expense:", e);
-      return { status: 'error', message: 'Network error' };
+      return { status: 'error', message: 'Network Error' };
     }
   },
   
-  // บันทึก Log
   recordLog: async (log: LogEntry) => {
     fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
