@@ -19,7 +19,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
   const [currentUser, setCurrentUser] = useState('');
-  const [currentUsername, setCurrentUsername] = useState(''); // To store actual username for password change
+  const [currentUsername, setCurrentUsername] = useState(''); 
 
   const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
@@ -239,24 +239,14 @@ const App: React.FC = () => {
          </nav>
 
          <div className="p-4 border-t border-gray-100">
-             <div className="bg-gray-50 rounded-xl p-4 flex flex-col gap-3">
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
-                        {currentUser.charAt(0)}
-                    </div>
-                    <div className="overflow-hidden">
-                        <p className="text-sm font-bold text-gray-700 truncate">{currentUser}</p>
-                        <p className="text-xs text-gray-500">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
-                    </div>
+             <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
+                    {currentUser.charAt(0)}
                  </div>
-                 
-                 {/* Change Password Button */}
-                 <button 
-                    onClick={() => setIsChangePasswordOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
-                 >
-                    <LockKeyhole size={12} /> เปลี่ยนรหัสผ่าน
-                 </button>
+                 <div className="overflow-hidden">
+                     <p className="text-sm font-bold text-gray-700 truncate">{currentUser}</p>
+                     <p className="text-xs text-gray-500">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
+                 </div>
              </div>
          </div>
       </aside>
@@ -271,12 +261,23 @@ const App: React.FC = () => {
                   <p className="text-sm text-gray-500 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p>
               </div>
               
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                   <button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative">
                       <Bell size={20} />
                       <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                   </button>
-                  <div className="h-8 w-px bg-gray-200 mx-2"></div>
+                  
+                  <div className="h-8 w-px bg-gray-200 mx-1"></div>
+
+                  {/* Change Password Button (Icon Only) */}
+                  <button 
+                    onClick={() => setIsChangePasswordOpen(true)}
+                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
+                    title="เปลี่ยนรหัสผ่าน"
+                  >
+                      <LockKeyhole size={20} />
+                  </button>
+
                   <button 
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
