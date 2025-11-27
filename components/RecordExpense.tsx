@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card } from './ui/Card';
 import { THEME_GRADIENT, Project } from '../types';
-import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Save, CheckCircle, AlertCircle, Loader2, Wallet } from 'lucide-react';
 
 interface RecordExpenseProps {
     projects: Project[];
@@ -33,7 +33,7 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
 
     if (!isNaN(amountNum) && !isNaN(projectIdNum) && projectIdNum > 0) {
         setIsSaving(true);
-        // Pass date and item
+        // Pass date and item to the parent handler -> API
         const success = await onRecord(projectIdNum, amountNum, formData.date, formData.item);
         setIsSaving(false);
 
@@ -41,6 +41,7 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
             setSubmitted(true);
             setTimeout(() => setSubmitted(false), 3000);
             
+            // Reset form but keep date today
             setFormData({
                 projectId: '',
                 item: '',
@@ -49,12 +50,15 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                 note: ''
             });
         } else {
-            alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบชื่อคอลัมน์ใน Google Sheet (id, budget, spent, status) หรือการเชื่อมต่ออินเทอร์เน็ต");
+            alert("บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ หรือรหัสโครงการใน Google Sheet");
         }
     } else {
         alert("กรุณาตรวจสอบข้อมูลโครงการและจำนวนเงิน");
     }
   };
+
+  // Find selected project to display info
+  const selectedProject = projects.find(p => p.id.toString() === formData.projectId);
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
@@ -69,7 +73,7 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
         {submitted && (
           <div className="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 flex items-center">
             <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
-            บันทึกข้อมูลและอัปเดตยอดงบประมาณสำเร็จ!
+            บันทึกข้อมูลเรียบร้อย!
           </div>
         )}
 
@@ -92,6 +96,34 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                 ))}
               </select>
             </div>
+
+            {/* Budget Info Box */}
+            {selectedProject && (
+                <div className="mt-4 p-4 bg-purple-50 border border-purple-100 rounded-2xl flex flex-col md:flex-row gap-4 md:items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white p-2 rounded-full shadow-sm">
+                            <Wallet className="text-purple-600" size={20} />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500">งบประมาณที่ได้รับ</p>
+                            <p className="text-lg font-bold text-purple-700">{selectedProject.budget.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div className="hidden md:block w-px h-8 bg-purple-200"></div>
+                    <div className="flex justify-between md:justify-start md:gap-8 w-full md:w-auto">
+                        <div>
+                            <p className="text-xs text-gray-500">ใช้ไปแล้ว</p>
+                            <p className="font-medium text-gray-700">{selectedProject.spent.toLocaleString()}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500">คงเหลือ</p>
+                            <p className={`font-bold ${(selectedProject.budget - selectedProject.spent) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {(selectedProject.budget - selectedProject.spent).toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
           </div>
 
           {/* Expense Item */}
@@ -141,7 +173,7 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
                   className="block w-full px-4 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 rounded-xl transition-all disabled:bg-gray-100"
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1">* กรอกเฉพาะตัวเลขจำนวนเต็ม (ไม่มีจุดทศนิยม)</p>
+              <p className="text-xs text-gray-400 mt-1">* กรอกเฉพาะตัวเลขจำนวนเต็ม</p>
             </div>
           </div>
 
@@ -175,13 +207,6 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
           </div>
         </form>
       </Card>
-
-      <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-        <AlertCircle className="text-blue-500 flex-shrink-0 mt-0.5" size={20} />
-        <p className="text-sm text-blue-700">
-          <strong>ข้อแนะนำ:</strong> ระบบจะทำการคำนวณและหักลบงบประมาณคงเหลือของโครงการที่เลือกโดยอัตโนมัติทันทีที่บันทึก
-        </p>
-      </div>
     </div>
   );
 };
