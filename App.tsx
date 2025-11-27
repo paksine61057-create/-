@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Page, THEME_GRADIENT, Project, LogEntry } from './types';
+import { Page, THEME_GRADIENT, Project, LogEntry, Expense } from './types';
 import { MOCK_PROJECTS, MOCK_ACCESS_LOGS } from './constants';
 import Home from './components/Home';
 import RecordExpense from './components/RecordExpense';
@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [accessLogs, setAccessLogs] = useState<LogEntry[]>(MOCK_ACCESS_LOGS);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   
   // Modal State
@@ -35,9 +36,10 @@ const App: React.FC = () => {
       const fetchData = async () => {
         setLoading(true);
         try {
-          const [pData, lData] = await Promise.all([
+          const [pData, lData, eData] = await Promise.all([
             api.getProjects(),
-            api.getLogs()
+            api.getLogs(),
+            api.getExpenses()
           ]);
           
           // --- INTELLIGENT MERGE LOGIC ---
@@ -62,9 +64,9 @@ const App: React.FC = () => {
              setProjects(MOCK_PROJECTS);
           }
 
-          if (lData && lData.length > 0) {
-            setAccessLogs(lData);
-          }
+          if (lData && lData.length > 0) setAccessLogs(lData);
+          if (eData && eData.length > 0) setExpenses(eData);
+
         } catch (error) {
           console.error("Failed to fetch data from Google Sheets", error);
         } finally {
@@ -136,10 +138,11 @@ const App: React.FC = () => {
     await api.deleteProject(id);
   };
 
-  const handleRecordExpense = async (projectId: number, amount: number): Promise<boolean> => {
-    const result = await api.recordExpense(projectId, amount);
+  const handleRecordExpense = async (projectId: number, amount: number, date: string, item: string): Promise<boolean> => {
+    const result = await api.recordExpense(projectId, amount, date, item);
     
     if (result && result.status === 'success') {
+        // Update Projects State
         setProjects(prev => prev.map(p => {
           if (p.id === projectId) {
             return {
@@ -150,6 +153,10 @@ const App: React.FC = () => {
           }
           return p;
         }));
+        
+        // Update Expenses State locally for chart (Optimistic)
+        setExpenses(prev => [...prev, { date, amount, projectId, item }]);
+        
         return true;
     } else {
         console.error("Record expense failed:", result);
@@ -176,14 +183,14 @@ const App: React.FC = () => {
 
     switch (currentPage) {
       case Page.HOME: 
-        return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        return <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
       case Page.RECORD: 
         return userRole === 'admin' ? (
           <RecordExpense 
             projects={projects} 
             onRecord={handleRecordExpense}
           />
-        ) : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        ) : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
       case Page.DASHBOARD: 
         return <BudgetDashboard projects={projects} />;
       case Page.PROJECTS: 
@@ -194,13 +201,13 @@ const App: React.FC = () => {
             onAdd={handleAddProject}
             onDelete={handleDeleteProject}
           />
-        ) : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        ) : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
       case Page.REPORT: 
-        return userRole === 'admin' ? <ReportExport projects={projects} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        return userRole === 'admin' ? <ReportExport projects={projects} /> : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
       case Page.ACCESS_LOGS:
-        return userRole === 'admin' ? <AccessLogs logs={accessLogs} /> : <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        return userRole === 'admin' ? <AccessLogs logs={accessLogs} /> : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
       default: 
-        return <Home setPage={handleNavClick} projects={projects} username={currentUser} userRole={userRole} />;
+        return <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
     }
   };
 
@@ -210,8 +217,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden print:overflow-visible">
-      
-      {/* SIDEBAR */}
       <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0 print:hidden">
          <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100">
              <img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" />
@@ -220,7 +225,6 @@ const App: React.FC = () => {
                  <span className="text-xs text-purple-600 font-bold tracking-wider">ปีงบประมาณ 2569</span>
              </div>
          </div>
-
          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {navItems.map((item) => (
                 <button
@@ -237,7 +241,6 @@ const App: React.FC = () => {
                 </button>
             ))}
          </nav>
-
          <div className="p-4 border-t border-gray-100">
              <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
@@ -251,25 +254,18 @@ const App: React.FC = () => {
          </div>
       </aside>
 
-      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0 print:overflow-visible print:h-auto">
-          
-          {/* HEADER */}
           <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10 print:hidden">
               <div>
                   <h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2>
                   <p className="text-sm text-gray-500 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p>
               </div>
-              
               <div className="flex items-center gap-3">
                   <button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative">
                       <Bell size={20} />
                       <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                   </button>
-                  
                   <div className="h-8 w-px bg-gray-200 mx-1"></div>
-
-                  {/* Change Password Button (Icon Only) */}
                   <button 
                     onClick={() => setIsChangePasswordOpen(true)}
                     className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
@@ -277,7 +273,6 @@ const App: React.FC = () => {
                   >
                       <LockKeyhole size={20} />
                   </button>
-
                   <button 
                     onClick={handleLogout}
                     className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
@@ -288,21 +283,17 @@ const App: React.FC = () => {
               </div>
           </header>
 
-          {/* CONTENT */}
           <main className="flex-1 overflow-y-auto p-4 lg:p-8 print:overflow-visible print:p-0">
               {renderContent()}
               <div className="h-8 print:hidden"></div>
           </main>
-
       </div>
 
-      {/* Change Password Modal */}
       <ChangePasswordModal 
         isOpen={isChangePasswordOpen} 
         onClose={() => setIsChangePasswordOpen(false)} 
         username={currentUsername}
       />
-
     </div>
   );
 };

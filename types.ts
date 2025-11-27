@@ -19,13 +19,11 @@ export interface Project {
   status: 'Active' | 'Closed' | 'Warning';
 }
 
-export interface ExpenseLog {
-  id: number;
-  projectId: number;
-  description: string;
+export interface Expense {
   date: string;
   amount: number;
-  note?: string;
+  projectId: number;
+  item: string;
 }
 
 export interface LogEntry {

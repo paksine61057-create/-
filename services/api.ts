@@ -1,5 +1,5 @@
 
-import { Project, LogEntry } from '../types';
+import { Project, LogEntry, Expense } from '../types';
 
 // URL ของ Google Web App (API)
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWK7KbOYEDRfDCxepelHSeF4NzJwlDS1V2DVst4xclE7ekDcNcDNiufk4dwXjKIBl4JQ/exec";
@@ -55,6 +55,17 @@ export const api = {
     }
   },
 
+  getExpenses: async (): Promise<Expense[]> => {
+    try {
+      const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getExpenses`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      return [];
+    }
+  },
+
   // --- ACTIONS ---
   addProject: async (project: Project) => {
     try {
@@ -92,12 +103,12 @@ export const api = {
     }
   },
 
-  recordExpense: async (projectId: number, amount: number) => {
+  recordExpense: async (projectId: number, amount: number, date: string, item: string) => {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: 'recordExpense', projectId, amount }),
+        body: JSON.stringify({ action: 'recordExpense', projectId, amount, date, item }),
       });
       return await res.json();
     } catch (e) {

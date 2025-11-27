@@ -6,7 +6,7 @@ import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface RecordExpenseProps {
     projects: Project[];
-    onRecord: (projectId: number, amount: number) => Promise<boolean>;
+    onRecord: (projectId: number, amount: number, date: string, item: string) => Promise<boolean>;
 }
 
 const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => {
@@ -33,12 +33,11 @@ const RecordExpense: React.FC<RecordExpenseProps> = ({ projects, onRecord }) => 
 
     if (!isNaN(amountNum) && !isNaN(projectIdNum) && projectIdNum > 0) {
         setIsSaving(true);
-        // Update the global state and wait for API
-        const success = await onRecord(projectIdNum, amountNum);
+        // Pass date and item
+        const success = await onRecord(projectIdNum, amountNum, formData.date, formData.item);
         setIsSaving(false);
 
         if (success) {
-            // Show success message and reset form
             setSubmitted(true);
             setTimeout(() => setSubmitted(false), 3000);
             
