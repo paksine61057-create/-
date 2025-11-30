@@ -216,7 +216,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F7F9FC] font-sans overflow-hidden print:overflow-visible">
+    <div className="flex h-screen bg-[#E2E4E8] font-sans overflow-hidden print:overflow-visible">
       <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0 print:hidden">
          <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100">
              <img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" />

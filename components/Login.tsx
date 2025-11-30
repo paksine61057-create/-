@@ -39,9 +39,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onRecordLog }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC] p-4 font-sans relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#E2E4E8] p-4 font-sans relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-purple-100 to-transparent -z-10"></div>
+      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-gray-200 to-transparent -z-10 opacity-50"></div>
       <div className="absolute -top-20 -right-20 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
       <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
@@ -49,8 +49,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onRecordLog }) => {
         {/* Header */}
         <div className={`${THEME_GRADIENT} p-8 text-center relative overflow-hidden`}>
           <div className="relative z-10">
-            <div className="w-32 h-32 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-4 p-3">
-               <img src={LOGO_URL} alt="School Logo" className="w-full h-full object-contain" />
+            <div className="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 p-3 border border-white/30">
+                <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-md">
+                    <img src={LOGO_URL} alt="School Logo" className="w-24 h-24 object-contain" />
+                </div>
             </div>
             <h1 className="text-2xl font-bold text-white">Prajak Budget 2569</h1>
             <p className="text-purple-100 text-sm mt-1">ระบบติดตามการใช้งบประมาณโรงเรียน</p>
