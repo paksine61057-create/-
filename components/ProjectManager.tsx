@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { THEME_GRADIENT, Project } from '../types';
-import { Plus, Edit, Trash2, X, Save, Wallet } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Wallet, CheckCircle2 } from 'lucide-react';
 
 interface ProjectManagerProps {
   projects: Project[];
@@ -38,13 +38,12 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
 
   const handleAddClick = () => {
     setEditingProject(null);
-    setFormData(defaultFormState); // Set empty form directly
+    setFormData(defaultFormState); 
     setShowModal(true);
   };
 
   const handleEditClick = (project: Project) => {
     setEditingProject(project);
-    // Set form data directly from project, using safety checks
     setFormData({
         name: project.name || '',
         group: project.group || 'กลุ่มบริหารวิชาการ',
@@ -68,7 +67,6 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Parse as Integers (Base 10) - No decimals
     const budgetNum = parseInt(formData.budget, 10) || 0;
     const spentNum = parseInt(formData.spent, 10) || 0;
 
@@ -83,18 +81,10 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
     };
 
     if (editingProject) {
-        // UPDATE existing project
-        onUpdate({ 
-            ...finalData, 
-            id: editingProject.id 
-        });
+        onUpdate({ ...finalData, id: editingProject.id });
     } else {
-        // ADD new project
         const newId = projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 101;
-        onAdd({ 
-            ...finalData, 
-            id: newId 
-        });
+        onAdd({ ...finalData, id: newId });
     }
     setShowModal(false);
   };
@@ -116,27 +106,46 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
 
       {/* Grid of Projects */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {projects.map((project) => (
-            <div key={project.id} className="bg-white rounded-3xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-100 relative group flex flex-col h-full">
-                
+        {projects.map((project) => {
+            // Check for 'Closed' status (Rust Theme)
+            // Ensure exact match with what is saved in DB ('Closed')
+            const isClosed = project.status === 'Closed';
+            
+            return (
+            <div 
+                key={project.id} 
+                className={`rounded-3xl p-6 shadow-md hover:shadow-xl transition-all border relative group flex flex-col h-full 
+                    ${isClosed 
+                        ? 'bg-orange-100 border-orange-300 shadow-orange-100'  // Rust/Orange theme (Stronger)
+                        : 'bg-white border-gray-100'        // Default White theme
+                    }`}
+            >
+                {/* Visual Indicator for Closed Projects */}
+                {isClosed && (
+                    <div className="absolute -top-3 -right-3 bg-orange-600 text-white p-1.5 rounded-full shadow-lg z-10 border-2 border-white animate-scale-up">
+                        <CheckCircle2 size={24} />
+                    </div>
+                )}
+
                 {/* Card Header */}
                 <div className="flex justify-between items-start mb-4">
                     <span className={`text-xs font-bold px-2 py-1 rounded-lg 
-                        ${project.category.includes('ลงทุน') ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}
+                        ${isClosed ? 'bg-orange-200 text-orange-900 border border-orange-300' : 
+                          project.category.includes('ลงทุน') ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}
                     `}>
                         {project.category}
                     </span>
                     <div className="flex gap-1">
                          <button 
                             onClick={() => handleEditClick(project)}
-                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
+                            className={`p-2 rounded-full transition-colors ${isClosed ? 'text-orange-600 hover:text-orange-900 hover:bg-orange-200' : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'}`}
                             title="แก้ไข"
                          >
                             <Edit size={18} />
                          </button>
                          <button 
                             onClick={() => { if(window.confirm(`ยืนยันการลบโครงการ "${project.name}"?`)) onDelete(project.id); }}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            className={`p-2 rounded-full transition-colors ${isClosed ? 'text-orange-600 hover:text-red-700 hover:bg-red-100' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
                             title="ลบ"
                          >
                             <Trash2 size={18} />
@@ -145,37 +154,39 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                 </div>
 
                 {/* Project Name */}
-                <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{project.name}</h3>
+                <h3 className={`text-lg font-bold mb-2 line-clamp-2 min-h-[3.5rem] ${isClosed ? 'text-orange-950' : 'text-gray-800'}`}>
+                    {project.name}
+                </h3>
                 
                 <div className="flex-grow">
-                    <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                    <p className={`text-sm mb-4 flex items-center gap-2 ${isClosed ? 'text-orange-800' : 'text-gray-500'}`}>
+                        <span className={`w-2 h-2 rounded-full ${isClosed ? 'bg-orange-600' : 'bg-gray-300'}`}></span>
                         {project.group}
                     </p>
                     
                     {/* Financial Stats */}
-                    <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <div className={`space-y-3 p-4 rounded-2xl border ${isClosed ? 'bg-white/60 border-orange-300' : 'bg-gray-50 border-gray-100'}`}>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">งบประมาณ:</span>
-                            <span className="font-bold text-gray-800">{project.budget.toLocaleString()}</span>
+                            <span className={isClosed ? 'text-orange-800 font-medium' : 'text-gray-500'}>งบประมาณ:</span>
+                            <span className={`font-bold ${isClosed ? 'text-orange-950' : 'text-gray-800'}`}>{project.budget.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">ใช้ไป:</span>
-                            <span className={`font-bold ${project.spent > project.budget ? 'text-red-500' : 'text-gray-600'}`}>
+                            <span className={isClosed ? 'text-orange-800 font-medium' : 'text-gray-500'}>ใช้ไป:</span>
+                            <span className={`font-bold ${project.spent > project.budget ? 'text-red-600' : isClosed ? 'text-orange-950' : 'text-gray-600'}`}>
                                 {project.spent.toLocaleString()}
                             </span>
                         </div>
-                        <div className="flex justify-between text-sm border-t border-gray-200 pt-2 mt-2">
-                            <span className="text-gray-500">คงเหลือ:</span>
-                            <span className={`font-bold ${(project.budget - project.spent) < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                        <div className={`flex justify-between text-sm border-t pt-2 mt-2 ${isClosed ? 'border-orange-300' : 'border-gray-200'}`}>
+                            <span className={isClosed ? 'text-orange-800 font-medium' : 'text-gray-500'}>คงเหลือ:</span>
+                            <span className={`font-bold ${(project.budget - project.spent) < 0 ? 'text-red-600' : 'text-green-600'}`}>
                                 {(project.budget - project.spent).toLocaleString()}
                             </span>
                         </div>
                         
                         {/* Progress Bar */}
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                        <div className={`w-full rounded-full h-1.5 mt-2 ${isClosed ? 'bg-orange-200' : 'bg-gray-200'}`}>
                             <div 
-                                className={`h-1.5 rounded-full ${THEME_GRADIENT}`} 
+                                className={`h-1.5 rounded-full ${isClosed ? 'bg-orange-600' : THEME_GRADIENT}`} 
                                 style={{ width: `${project.budget > 0 ? Math.min((project.spent / project.budget) * 100, 100) : 0}%` }}
                             ></div>
                         </div>
@@ -183,22 +194,22 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                 </div>
                 
                 {/* Footer Status */}
-                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                    <span className={`text-xs px-2 py-1 rounded-full border flex items-center gap-1 ${
+                <div className={`mt-4 pt-4 border-t flex justify-between items-center ${isClosed ? 'border-orange-300' : 'border-gray-100'}`}>
+                    <span className={`text-xs px-2 py-1 rounded-full border flex items-center gap-1 font-semibold ${
                         project.status === 'Active' ? 'border-green-200 text-green-700 bg-green-50' : 
-                        project.status === 'Closed' ? 'border-blue-200 text-blue-700 bg-blue-50' :
+                        project.status === 'Closed' ? 'border-orange-600 text-orange-900 bg-orange-300' : 
                         'border-orange-200 text-orange-700 bg-orange-50'
                     }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
                             project.status === 'Active' ? 'bg-green-500' : 
-                            project.status === 'Closed' ? 'bg-blue-500' : 'bg-orange-500'
+                            project.status === 'Closed' ? 'bg-orange-800' : 'bg-orange-500'
                         }`}></span>
                         {project.status === 'Active' ? 'กำลังดำเนินการ' : project.status === 'Closed' ? 'ดำเนินการเสร็จสิ้น' : 'เฝ้าระวัง'}
                     </span>
-                    <span className="text-xs text-gray-400">ID: {project.id}</span>
+                    <span className={`text-xs ${isClosed ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>ID: {project.id}</span>
                 </div>
             </div>
-        ))}
+        )})}
       </div>
 
       {/* MODAL FORM */}
@@ -335,7 +346,7 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                             {['Active', 'Closed', 'Warning'].map((statusOption) => (
                                 <label key={statusOption} className={`flex-1 cursor-pointer border rounded-xl p-3 flex items-center justify-center gap-2 transition-all ${
                                     formData.status === statusOption 
-                                    ? statusOption === 'Closed' ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500' : 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' 
+                                    ? statusOption === 'Closed' ? 'border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500' : 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' 
                                     : 'border-gray-200 hover:bg-gray-50'
                                 }`}>
                                     <input 
@@ -348,7 +359,7 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                                     />
                                     <span className={`w-2 h-2 rounded-full ${
                                         statusOption === 'Active' ? 'bg-green-500' : 
-                                        statusOption === 'Closed' ? 'bg-blue-500' : 'bg-orange-500'
+                                        statusOption === 'Closed' ? 'bg-orange-500' : 'bg-yellow-500'
                                     }`}></span>
                                     {statusOption === 'Active' ? 'กำลังดำเนินการ' : 
                                      statusOption === 'Closed' ? 'ดำเนินการเสร็จสิ้น' : 'เฝ้าระวัง'}

@@ -15,11 +15,11 @@ import { api } from './services/api';
 
 const LOGO_URL = "https://img5.pic.in.th/file/secure-sv1/5bc66fd0-c76e-41c4-87ed-46d11f4a36fa.png";
 
-// Define Junsri Colors (Teal Theme) based on specific request
-const SIDEBAR_BG = "bg-teal-700"; 
-const HEADER_BG = "bg-teal-600"; 
-const ACTIVE_ITEM_BG = "bg-teal-800"; // Darker for active state
-const HOVER_ITEM_BG = "hover:bg-teal-600";
+// Define Junsri Colors (Deep Teal Theme)
+const SIDEBAR_BG = "bg-teal-800"; // จุนสีเข้ม
+const HEADER_BG = "bg-teal-700"; // จุนสีสว่างขึ้น
+const ACTIVE_ITEM_BG = "bg-teal-600"; // สีตอนเลือกเมนู
+const HOVER_ITEM_BG = "hover:bg-teal-700"; // สีตอนเอาเมาส์ชี้
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -219,16 +219,16 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#E2E4E8] font-sans overflow-hidden print:overflow-visible">
       
-      {/* SIDEBAR (JUNSRI THEME - Teal-700) */}
-      <aside className={`flex w-72 ${SIDEBAR_BG} text-white border-r border-teal-800 flex-col shadow-xl z-20 flex-shrink-0 print:hidden`}>
-         <div className="h-24 flex items-center gap-3 px-6 border-b border-teal-600">
+      {/* SIDEBAR (JUNSRI THEME - Deep Teal) */}
+      <aside className={`flex w-72 ${SIDEBAR_BG} text-white border-r border-teal-900 flex-col shadow-xl z-20 flex-shrink-0 print:hidden`}>
+         <div className="h-24 flex items-center gap-3 px-6 border-b border-teal-600/50">
              {/* Logo with White Circle Background */}
              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                 <img src={LOGO_URL} alt="Logo" className="w-10 h-10 object-contain" />
              </div>
              <div>
-                 <h1 className="font-bold text-lg leading-tight text-white">Prajak Budget</h1>
-                 <span className="text-xs text-teal-200 font-medium tracking-wider">ปีงบประมาณ 2569</span>
+                 <h1 className="font-bold text-lg text-teal-50 leading-tight">Prajak Budget</h1>
+                 <span className="text-xs text-teal-300 font-medium tracking-wider">ปีงบประมาณ 2569</span>
              </div>
          </div>
 
@@ -249,14 +249,14 @@ const App: React.FC = () => {
             ))}
          </nav>
 
-         <div className="p-4 border-t border-teal-600">
+         <div className="p-4 border-t border-teal-600/50">
              <div className="bg-teal-900/40 rounded-xl p-4 flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold border-2 border-teal-400">
                     {currentUser.charAt(0)}
                  </div>
                  <div className="overflow-hidden">
-                     <p className="text-sm font-bold text-white truncate">{currentUser}</p>
-                     <p className="text-xs text-teal-200">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
+                     <p className="text-sm font-bold text-teal-50 truncate">{currentUser}</p>
+                     <p className="text-xs text-teal-300">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
                  </div>
              </div>
          </div>
@@ -265,7 +265,7 @@ const App: React.FC = () => {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0 print:overflow-visible print:h-auto">
           
-          {/* HEADER (JUNSRI THEME - Teal-600) */}
+          {/* HEADER (JUNSRI THEME - Lighter Teal) */}
           <header className={`h-20 ${HEADER_BG} text-white shadow-md flex items-center justify-between px-8 sticky top-0 z-10 print:hidden`}>
               <div>
                   <h2 className="text-2xl font-bold">{getPageTitle()}</h2>
@@ -273,16 +273,16 @@ const App: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-3">
-                  <button className="p-2 text-teal-100 hover:text-white hover:bg-teal-500 rounded-full transition-colors relative">
+                  <button className="p-2 text-teal-100 hover:text-white hover:bg-teal-600 rounded-full transition-colors relative">
                       <Bell size={20} />
-                      <span className="absolute top-2 right-2 w-2 h-2 bg-red-400 rounded-full border border-teal-600"></span>
+                      <span className="absolute top-2 right-2 w-2 h-2 bg-red-400 rounded-full border border-teal-700"></span>
                   </button>
                   
                   <div className="h-8 w-px bg-teal-500 mx-1"></div>
 
                   <button 
                     onClick={() => setIsChangePasswordOpen(true)}
-                    className="p-2 text-teal-100 hover:text-white hover:bg-teal-500 rounded-full transition-colors"
+                    className="p-2 text-teal-100 hover:text-white hover:bg-teal-600 rounded-full transition-colors"
                     title="เปลี่ยนรหัสผ่าน"
                   >
                       <LockKeyhole size={20} />
@@ -290,7 +290,7 @@ const App: React.FC = () => {
 
                   <button 
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-sm font-medium text-teal-100 hover:text-white px-3 py-2 rounded-lg hover:bg-teal-800/50 transition-colors"
+                    className="flex items-center gap-2 text-sm font-medium text-teal-100 hover:text-white px-3 py-2 rounded-lg hover:bg-red-500/20 transition-colors"
                   >
                       <LogOut size={18} />
                       <span className="hidden sm:inline">ออกจากระบบ</span>
