@@ -41,7 +41,6 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
   const CATEGORY_COLORS = ['#6A4DE8', '#D76EF5', '#FDBA74'];
 
   // --- CALCULATE MONTHLY CHART (FROM EXPENSES) ---
-  // Fiscal Year 2569: Oct 2025 - Sep 2026
   const monthlyData = [
     { name: 'ต.ค. 68', month: 10, year: 2025, spending: 0 },
     { name: 'พ.ย. 68', month: 11, year: 2025, spending: 0 },
@@ -57,15 +56,15 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
     { name: 'ก.ย. 69', month: 9, year: 2026, spending: 0 },
   ];
 
-  // Aggregate actual expenses
   expenses.forEach(exp => {
-      const d = new Date(exp.date); // Expect ISO string 'YYYY-MM-DD'
-      const m = d.getMonth() + 1; // 1-12
-      const y = d.getFullYear();
-      
-      const target = monthlyData.find(item => item.month === m && item.year === y);
-      if (target) {
-          target.spending += Number(exp.amount);
+      const d = new Date(exp.date);
+      if (!isNaN(d.getTime())) {
+          const m = d.getMonth() + 1; 
+          const y = d.getFullYear();
+          const target = monthlyData.find(item => item.month === m && item.year === y);
+          if (target) {
+              target.spending += Number(exp.amount);
+          }
       }
   });
 
@@ -76,6 +75,8 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
 
   return (
     <div className="space-y-8 animate-fade-in">
+      
+      {/* Header & Greeting */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <div>
            <h2 className="text-3xl font-bold text-gray-800">ยินดีต้อนรับ, {username}</h2>
@@ -88,6 +89,7 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
         </div>
       </div>
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-gradient-to-br from-white to-gray-50 border-l-8 border-[#6A4DE8]">
           <div className="flex items-center justify-between">
@@ -127,51 +129,64 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
         </Card>
       </div>
 
+      {/* --- QUICK MENU (VIBRANT GRADIENTS) --- */}
       <div>
         <h3 className="text-xl font-bold text-gray-800 mb-4">เมนูด่วน</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            
+            {/* RECORD EXPENSE - Emerald */}
             {userRole === 'admin' && (
-              <button onClick={() => setPage(Page.RECORD)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3">
-                  <div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}>
+              <button onClick={() => setPage(Page.RECORD)} className="group bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border border-emerald-100 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="p-4 rounded-full bg-white text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
                       <FilePlus2 size={32} />
                   </div>
-                  <span className="font-semibold text-gray-700">บันทึกค่าใช้จ่าย</span>
+                  <span className="font-bold text-emerald-800 text-sm">บันทึกค่าใช้จ่าย</span>
               </button>
             )}
-            <button onClick={() => setPage(Page.DASHBOARD)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3">
-                <div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}>
+
+            {/* DASHBOARD - Violet */}
+            <button onClick={() => setPage(Page.DASHBOARD)} className="group bg-gradient-to-br from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border border-violet-100 text-center flex flex-col items-center justify-center gap-3">
+                <div className="p-4 rounded-full bg-white text-violet-600 shadow-sm group-hover:scale-110 transition-transform">
                     <PieChart size={32} />
                 </div>
-                <span className="font-semibold text-gray-700">สรุปงบประมาณ</span>
+                <span className="font-bold text-violet-800 text-sm">สรุปงบประมาณ</span>
             </button>
+
+            {/* MANAGE PROJECTS - Blue */}
             {userRole === 'admin' && (
-              <button onClick={() => setPage(Page.PROJECTS)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3">
-                  <div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}>
+              <button onClick={() => setPage(Page.PROJECTS)} className="group bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-100 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="p-4 rounded-full bg-white text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
                       <FolderCog size={32} />
                   </div>
-                  <span className="font-semibold text-gray-700">จัดการโครงการ</span>
+                  <span className="font-bold text-blue-800 text-sm">จัดการโครงการ</span>
               </button>
             )}
+
+            {/* REPORT - Pink */}
             {userRole === 'admin' && (
-              <button onClick={() => setPage(Page.REPORT)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3">
-                  <div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}>
+              <button onClick={() => setPage(Page.REPORT)} className="group bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border border-pink-100 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="p-4 rounded-full bg-white text-pink-600 shadow-sm group-hover:scale-110 transition-transform">
                       <FileText size={32} />
                   </div>
-                  <span className="font-semibold text-gray-700">ออกรายงาน</span>
+                  <span className="font-bold text-pink-800 text-sm">ออกรายงาน</span>
               </button>
             )}
+
+            {/* LOGS - Amber */}
             {userRole === 'admin' && (
-              <button onClick={() => setPage(Page.ACCESS_LOGS)} className="group bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-purple-200 text-center flex flex-col items-center justify-center gap-3">
-                  <div className={`p-4 rounded-full ${THEME_GRADIENT} text-white shadow-md group-hover:scale-110 transition-transform`}>
+              <button onClick={() => setPage(Page.ACCESS_LOGS)} className="group bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 border border-amber-100 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="p-4 rounded-full bg-white text-amber-600 shadow-sm group-hover:scale-110 transition-transform">
                       <Clock size={32} />
                   </div>
-                  <span className="font-semibold text-gray-700">ประวัติการเข้าใช้งาน</span>
+                  <span className="font-bold text-amber-800 text-sm">ประวัติการใช้งาน</span>
               </button>
             )}
         </div>
       </div>
 
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Expenses Chart */}
         <Card title="การเบิกจ่ายรายเดือน">
             <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -179,7 +194,11 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} tick={{ fontSize: 12 }} />
                         <YAxis axisLine={false} tickLine={false} />
-                        <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                        <Tooltip 
+                            cursor={{fill: '#f3f4f6'}} 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                            formatter={(value: number) => formatThaiCurrency(value)}
+                        />
                         <Bar dataKey="spending" radius={[4, 4, 0, 0]}>
                             {monthlyData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={MONTHLY_COLORS[index % MONTHLY_COLORS.length]} />
@@ -190,17 +209,35 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
             </div>
         </Card>
 
+        {/* Project Group Distribution */}
         <Card title="สัดส่วนงบประมาณตามกลุ่มโครงการ">
             <div className="h-64 w-full flex justify-center items-center">
                 <ResponsiveContainer width="100%" height="100%">
                     <RePieChart>
-                        <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                        <Pie 
+                            data={pieChartData} 
+                            cx="50%" 
+                            cy="50%" 
+                            innerRadius={60} 
+                            outerRadius={80} 
+                            paddingAngle={5} 
+                            dataKey="value"
+                        >
                             {pieChartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip contentStyle={{ borderRadius: '12px' }} formatter={(value: number) => formatThaiCurrency(value)} />
-                        <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }} />
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px' }} 
+                            formatter={(value: number) => formatThaiCurrency(value)} 
+                        />
+                        <Legend 
+                            iconType="circle" 
+                            layout="vertical" 
+                            verticalAlign="middle" 
+                            align="right" 
+                            wrapperStyle={{ fontSize: '12px' }} 
+                        />
                     </RePieChart>
                 </ResponsiveContainer>
             </div>

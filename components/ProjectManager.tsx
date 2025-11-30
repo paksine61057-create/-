@@ -186,14 +186,14 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                 <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                     <span className={`text-xs px-2 py-1 rounded-full border flex items-center gap-1 ${
                         project.status === 'Active' ? 'border-green-200 text-green-700 bg-green-50' : 
-                        project.status === 'Closed' ? 'border-gray-200 text-gray-600 bg-gray-50' :
+                        project.status === 'Closed' ? 'border-blue-200 text-blue-700 bg-blue-50' :
                         'border-orange-200 text-orange-700 bg-orange-50'
                     }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
                             project.status === 'Active' ? 'bg-green-500' : 
-                            project.status === 'Closed' ? 'bg-gray-500' : 'bg-orange-500'
+                            project.status === 'Closed' ? 'bg-blue-500' : 'bg-orange-500'
                         }`}></span>
-                        {project.status === 'Active' ? 'ดำเนินงาน' : project.status === 'Closed' ? 'ปิดโครงการ' : 'เฝ้าระวัง'}
+                        {project.status === 'Active' ? 'กำลังดำเนินการ' : project.status === 'Closed' ? 'ดำเนินการเสร็จสิ้น' : 'เฝ้าระวัง'}
                     </span>
                     <span className="text-xs text-gray-400">ID: {project.id}</span>
                 </div>
@@ -335,7 +335,7 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                             {['Active', 'Closed', 'Warning'].map((statusOption) => (
                                 <label key={statusOption} className={`flex-1 cursor-pointer border rounded-xl p-3 flex items-center justify-center gap-2 transition-all ${
                                     formData.status === statusOption 
-                                    ? 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' 
+                                    ? statusOption === 'Closed' ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500' : 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' 
                                     : 'border-gray-200 hover:bg-gray-50'
                                 }`}>
                                     <input 
@@ -348,10 +348,10 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ projects, onUpdate, onA
                                     />
                                     <span className={`w-2 h-2 rounded-full ${
                                         statusOption === 'Active' ? 'bg-green-500' : 
-                                        statusOption === 'Closed' ? 'bg-gray-500' : 'bg-orange-500'
+                                        statusOption === 'Closed' ? 'bg-blue-500' : 'bg-orange-500'
                                     }`}></span>
-                                    {statusOption === 'Active' ? 'ดำเนินงาน' : 
-                                     statusOption === 'Closed' ? 'ปิดโครงการ' : 'เฝ้าระวัง'}
+                                    {statusOption === 'Active' ? 'กำลังดำเนินการ' : 
+                                     statusOption === 'Closed' ? 'ดำเนินการเสร็จสิ้น' : 'เฝ้าระวัง'}
                                 </label>
                             ))}
                         </div>

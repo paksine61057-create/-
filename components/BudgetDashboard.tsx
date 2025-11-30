@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Project } from '../types';
 import { Card } from './ui/Card';
-import { Filter, AlertTriangle, Wallet, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
+import { Filter, Wallet, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface BudgetDashboardProps {
@@ -35,8 +35,6 @@ const BudgetDashboard: React.FC<BudgetDashboardProps> = ({ projects }) => {
   const filteredProjects = filterGroup === 'all' 
     ? projects 
     : projects.filter(p => p.group === filterGroup);
-
-  const criticalProjects = projects.filter(p => p.budget > 0 && (p.spent / p.budget) > 0.8 && p.status !== 'Closed');
 
   const CategoryCard = ({ title, stats, color, icon }: { title: string, stats: any, color: string, icon: React.ReactNode }) => (
     <div className="bg-white p-6 rounded-3xl shadow-md hover:shadow-xl transition-all border border-gray-100 flex flex-col justify-between h-full">
@@ -168,23 +166,6 @@ const BudgetDashboard: React.FC<BudgetDashboardProps> = ({ projects }) => {
         </div>
       </div>
 
-      {/* Warning Cards */}
-      {criticalProjects.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {criticalProjects.map(p => (
-                <div key={p.id} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl flex items-start shadow-sm animate-pulse">
-                    <AlertTriangle className="text-red-500 mr-3 flex-shrink-0" />
-                    <div>
-                        <h4 className="font-bold text-red-700 text-sm">งบใกล้หมด: {p.name}</h4>
-                        <p className="text-red-600 text-xs mt-1">
-                            ใช้จ่ายไปแล้ว {((p.spent / p.budget) * 100).toFixed(1)}% (เหลือ {p.budget - p.spent} บาท)
-                        </p>
-                    </div>
-                </div>
-            ))}
-          </div>
-      )}
-
       {/* Detailed Table */}
       <Card className="overflow-hidden mt-4">
         <div className="overflow-x-auto">
@@ -216,8 +197,10 @@ const BudgetDashboard: React.FC<BudgetDashboardProps> = ({ projects }) => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                     {project.status === 'Active' ? 
-                                        <div className="w-2 h-2 bg-green-500 rounded-full mx-auto"></div> : 
-                                        <div className="w-2 h-2 bg-gray-300 rounded-full mx-auto"></div>
+                                        <div className="w-2 h-2 bg-green-500 rounded-full mx-auto" title="กำลังดำเนินการ"></div> : 
+                                     project.status === 'Closed' ?
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full mx-auto" title="ดำเนินการเสร็จสิ้น"></div> :
+                                        <div className="w-2 h-2 bg-orange-500 rounded-full mx-auto" title="เฝ้าระวัง"></div>
                                     }
                                 </td>
                             </tr>
