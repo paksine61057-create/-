@@ -15,6 +15,12 @@ import { api } from './services/api';
 
 const LOGO_URL = "https://img5.pic.in.th/file/secure-sv1/5bc66fd0-c76e-41c4-87ed-46d11f4a36fa.png";
 
+// Define Junsri Colors (Teal Theme) based on specific request
+const SIDEBAR_BG = "bg-teal-700"; 
+const HEADER_BG = "bg-teal-600"; 
+const ACTIVE_ITEM_BG = "bg-teal-800"; // Darker for active state
+const HOVER_ITEM_BG = "hover:bg-teal-600";
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
@@ -142,7 +148,6 @@ const App: React.FC = () => {
     const result = await api.recordExpense(projectId, amount, date, item);
     
     if (result && result.status === 'success') {
-        // Update Projects State
         setProjects(prev => prev.map(p => {
           if (p.id === projectId) {
             return {
@@ -153,10 +158,7 @@ const App: React.FC = () => {
           }
           return p;
         }));
-        
-        // Update Expenses State locally for chart (Optimistic)
         setExpenses(prev => [...prev, { date, amount, projectId, item }]);
-        
         return true;
     } else {
         console.error("Record expense failed:", result);
@@ -174,23 +176,22 @@ const App: React.FC = () => {
       return (
         <div className="flex h-full w-full items-center justify-center">
           <div className="flex flex-col items-center">
-            <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+            <div className="w-10 h-10 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mb-4"></div>
             <p className="text-gray-500 font-medium">กำลังเชื่อมต่อฐานข้อมูล...</p>
           </div>
         </div>
       );
     }
 
+    const commonProps = { projects, expenses, username: currentUser, userRole };
+
     switch (currentPage) {
       case Page.HOME: 
-        return <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
+        return <Home setPage={handleNavClick} {...commonProps} />;
       case Page.RECORD: 
         return userRole === 'admin' ? (
-          <RecordExpense 
-            projects={projects} 
-            onRecord={handleRecordExpense}
-          />
-        ) : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
+          <RecordExpense projects={projects} onRecord={handleRecordExpense} />
+        ) : <Home setPage={handleNavClick} {...commonProps} />;
       case Page.DASHBOARD: 
         return <BudgetDashboard projects={projects} />;
       case Page.PROJECTS: 
@@ -201,13 +202,13 @@ const App: React.FC = () => {
             onAdd={handleAddProject}
             onDelete={handleDeleteProject}
           />
-        ) : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
+        ) : <Home setPage={handleNavClick} {...commonProps} />;
       case Page.REPORT: 
-        return userRole === 'admin' ? <ReportExport projects={projects} /> : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
+        return userRole === 'admin' ? <ReportExport projects={projects} /> : <Home setPage={handleNavClick} {...commonProps} />;
       case Page.ACCESS_LOGS:
-        return userRole === 'admin' ? <AccessLogs logs={accessLogs} /> : <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
+        return userRole === 'admin' ? <AccessLogs logs={accessLogs} /> : <Home setPage={handleNavClick} {...commonProps} />;
       default: 
-        return <Home setPage={handleNavClick} projects={projects} expenses={expenses} username={currentUser} userRole={userRole} />;
+        return <Home setPage={handleNavClick} {...commonProps} />;
     }
   };
 
@@ -217,14 +218,20 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#E2E4E8] font-sans overflow-hidden print:overflow-visible">
-      <aside className="flex w-72 bg-white border-r border-gray-200 flex-col shadow-xl z-20 flex-shrink-0 print:hidden">
-         <div className="h-24 flex items-center gap-3 px-6 border-b border-gray-100">
-             <img src={LOGO_URL} alt="Logo" className="w-12 h-12 object-contain" />
+      
+      {/* SIDEBAR (JUNSRI THEME - Teal-700) */}
+      <aside className={`flex w-72 ${SIDEBAR_BG} text-white border-r border-teal-800 flex-col shadow-xl z-20 flex-shrink-0 print:hidden`}>
+         <div className="h-24 flex items-center gap-3 px-6 border-b border-teal-600">
+             {/* Logo with White Circle Background */}
+             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                <img src={LOGO_URL} alt="Logo" className="w-10 h-10 object-contain" />
+             </div>
              <div>
-                 <h1 className="font-bold text-lg text-gray-800 leading-tight">Prajak Budget</h1>
-                 <span className="text-xs text-purple-600 font-bold tracking-wider">ปีงบประมาณ 2569</span>
+                 <h1 className="font-bold text-lg leading-tight text-white">Prajak Budget</h1>
+                 <span className="text-xs text-teal-200 font-medium tracking-wider">ปีงบประมาณ 2569</span>
              </div>
          </div>
+
          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             {navItems.map((item) => (
                 <button
@@ -232,8 +239,8 @@ const App: React.FC = () => {
                     onClick={() => handleNavClick(item.page)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         currentPage === item.page 
-                        ? `${THEME_GRADIENT} text-white shadow-lg shadow-purple-200` 
-                        : 'text-gray-500 hover:bg-purple-50 hover:text-purple-600'
+                        ? `${ACTIVE_ITEM_BG} text-white shadow-lg` 
+                        : `text-teal-100 ${HOVER_ITEM_BG} hover:text-white`
                     }`}
                 >
                     {item.icon}
@@ -241,41 +248,49 @@ const App: React.FC = () => {
                 </button>
             ))}
          </nav>
-         <div className="p-4 border-t border-gray-100">
-             <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                 <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
+
+         <div className="p-4 border-t border-teal-600">
+             <div className="bg-teal-900/40 rounded-xl p-4 flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold border-2 border-teal-400">
                     {currentUser.charAt(0)}
                  </div>
                  <div className="overflow-hidden">
-                     <p className="text-sm font-bold text-gray-700 truncate">{currentUser}</p>
-                     <p className="text-xs text-gray-500">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
+                     <p className="text-sm font-bold text-white truncate">{currentUser}</p>
+                     <p className="text-xs text-teal-200">{userRole === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน'}</p>
                  </div>
              </div>
          </div>
       </aside>
 
+      {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0 print:overflow-visible print:h-auto">
-          <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10 print:hidden">
+          
+          {/* HEADER (JUNSRI THEME - Teal-600) */}
+          <header className={`h-20 ${HEADER_BG} text-white shadow-md flex items-center justify-between px-8 sticky top-0 z-10 print:hidden`}>
               <div>
-                  <h2 className="text-2xl font-bold text-gray-800">{getPageTitle()}</h2>
-                  <p className="text-sm text-gray-500 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p>
+                  <h2 className="text-2xl font-bold">{getPageTitle()}</h2>
+                  <p className="text-sm text-teal-100 hidden sm:block">ระบบติดตามงบประมาณ โรงเรียนประจักษ์ศิลปาคม</p>
               </div>
+              
               <div className="flex items-center gap-3">
-                  <button className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative">
+                  <button className="p-2 text-teal-100 hover:text-white hover:bg-teal-500 rounded-full transition-colors relative">
                       <Bell size={20} />
-                      <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                      <span className="absolute top-2 right-2 w-2 h-2 bg-red-400 rounded-full border border-teal-600"></span>
                   </button>
-                  <div className="h-8 w-px bg-gray-200 mx-1"></div>
+                  
+                  <div className="h-8 w-px bg-teal-500 mx-1"></div>
+
                   <button 
                     onClick={() => setIsChangePasswordOpen(true)}
-                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
+                    className="p-2 text-teal-100 hover:text-white hover:bg-teal-500 rounded-full transition-colors"
                     title="เปลี่ยนรหัสผ่าน"
                   >
                       <LockKeyhole size={20} />
                   </button>
+
                   <button 
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                    className="flex items-center gap-2 text-sm font-medium text-teal-100 hover:text-white px-3 py-2 rounded-lg hover:bg-teal-800/50 transition-colors"
                   >
                       <LogOut size={18} />
                       <span className="hidden sm:inline">ออกจากระบบ</span>
@@ -283,10 +298,12 @@ const App: React.FC = () => {
               </div>
           </header>
 
+          {/* SCROLLABLE CONTENT */}
           <main className="flex-1 overflow-y-auto p-4 lg:p-8 print:overflow-visible print:p-0">
               {renderContent()}
               <div className="h-8 print:hidden"></div>
           </main>
+
       </div>
 
       <ChangePasswordModal 
@@ -294,6 +311,7 @@ const App: React.FC = () => {
         onClose={() => setIsChangePasswordOpen(false)} 
         username={currentUsername}
       />
+
     </div>
   );
 };
