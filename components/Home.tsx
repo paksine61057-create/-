@@ -191,7 +191,13 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                        <XAxis 
+                            dataKey="name" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 12, fill: '#6b7280' }} 
+                            interval={0}
+                        />
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
                         <Tooltip 
                             cursor={{fill: '#f3f4f6'}} 
