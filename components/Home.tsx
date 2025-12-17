@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Page, THEME_GRADIENT, Project, Expense } from '../types';
 import { Card } from './ui/Card';
@@ -184,22 +183,22 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
         </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts Section - Full Width Stacked */}
+      <div className="flex flex-col gap-6">
         {/* Monthly Expenses Chart */}
         <Card title="การเบิกจ่ายรายเดือน">
-            <div className="h-64 w-full">
+            <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
+                    <BarChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} tick={{ fontSize: 12 }} />
-                        <YAxis axisLine={false} tickLine={false} />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
                         <Tooltip 
                             cursor={{fill: '#f3f4f6'}} 
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                             formatter={(value: number) => formatThaiCurrency(value)}
                         />
-                        <Bar dataKey="spending" radius={[4, 4, 0, 0]}>
+                        <Bar dataKey="spending" radius={[4, 4, 0, 0]} maxBarSize={60}>
                             {monthlyData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={MONTHLY_COLORS[index % MONTHLY_COLORS.length]} />
                             ))}
@@ -211,15 +210,15 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
 
         {/* Project Group Distribution */}
         <Card title="สัดส่วนงบประมาณตามกลุ่มโครงการ">
-            <div className="h-64 w-full flex justify-center items-center">
+            <div className="h-80 w-full flex justify-center items-center">
                 <ResponsiveContainer width="100%" height="100%">
                     <RePieChart>
                         <Pie 
                             data={pieChartData} 
                             cx="50%" 
                             cy="50%" 
-                            innerRadius={60} 
-                            outerRadius={80} 
+                            innerRadius={80} 
+                            outerRadius={110} 
                             paddingAngle={5} 
                             dataKey="value"
                         >
@@ -233,10 +232,10 @@ const Home: React.FC<HomeProps> = ({ setPage, projects, expenses, username, user
                         />
                         <Legend 
                             iconType="circle" 
-                            layout="vertical" 
-                            verticalAlign="middle" 
-                            align="right" 
-                            wrapperStyle={{ fontSize: '12px' }} 
+                            layout="horizontal" 
+                            verticalAlign="bottom" 
+                            align="center" 
+                            wrapperStyle={{ paddingTop: '10px' }}
                         />
                     </RePieChart>
                 </ResponsiveContainer>
